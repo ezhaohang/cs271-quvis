@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>QuVis</title>
+    </head>
+    <body>
+        <div>
+            <h1>QuVis</h1>
+        </div>
+        <div>
+            <h2>Circuit Diagram</h2>
+        </div>
+        <div>
+            <h2>State Probabilities</h2>
+            {% for qubit in qubits %}
+            <div>
+                <h3>
+                    Qubit {{qubit.id}} has state 1 with probability
+                    {{qubit.probability}}
+                </h3>
+            </div>
+
+            {% endfor %}
+        </div>
+    </body>
+</html>

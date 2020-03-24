@@ -4,4 +4,4 @@ class Qubit(models.Model):
   probability = models.FloatField()
 
   def __str__(self):
-    return self.id
+    return "id %d probability %.3f" % (self.id, self.probability)
