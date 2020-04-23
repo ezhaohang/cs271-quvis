@@ -1,0 +1,25 @@
+{
+    "name": "cs271-quvis",
+    "entry": "./static/js",
+    "devDependencies": {
+        "@babel/core": "^7.9.0",
+        "@babel/preset-env": "^7.9.5",
+        "babel-loader": "^8.1.0",
+        "babel-preset-es2015": "latest",
+        "babelify": "latest",
+        "browserify": "latest",
+        "path": "^0.12.7",
+        "webpack": "^4.42.1",
+        "webpack-cli": "^3.3.11"
+    },
+    "scripts": {
+        "build": "browserify ./static/js/main.js -o ./static/js/bundle.js -t [ babelify --presets [ @babel/env ] ]"
+    },
+    "version": "1.0.0",
+    "main": "index.js",
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {},
+    "description": ""
+}
