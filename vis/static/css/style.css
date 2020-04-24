@@ -42,6 +42,12 @@ h2 {
     display: flex;
 }
 
+svg {
+    align-self: center;
+    overflow: visible;
+    padding: 50px 20px;
+}
+
 #test-square {
     position: absolute;
     height: 100px;

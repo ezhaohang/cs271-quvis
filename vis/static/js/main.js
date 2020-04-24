@@ -2,11 +2,13 @@ const FILE_VERSION = 1;
 
 const Application = require("./application");
 const examples = require("./examples");
+let data = [];
 
 const displayAmplitudes = (nqubits, amplitudes) => {
-    const table = document.querySelector("#amplitudes");
+    const table = document.querySelector("#state-table");
     table.innerHTML = "";
     document.querySelector("#amplitudes-container").style.display = "block";
+    data = [];
     for (let i = 0; i < amplitudes.x.length; i++) {
         let amplitude = "";
         let state = "";
@@ -22,13 +24,160 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         if (prob < numeric.epsilon) {
             row.style.color = "#ccc";
         }
-        const probability = (prob * 100).toFixed(4) + "%";
+        const probability = (prob * 100).toFixed(4);
         row.innerHTML = `
             <td>|${state}></td>
             <td style="text-indent: 20px">${probability}</td>
         `;
         table.appendChild(row);
+        data.push({ state: state, probability: probability });
     }
+
+    d3.select("svg").selectAll("*").remove();
+    var svg = d3
+            .select("svg")
+            .attr("width", 350)
+            .attr("height", 350)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 14),
+        width = +svg.attr("width"),
+        height = +svg.attr("height"),
+        innerRadius = 0,
+        outerRadius = Math.min(width, height) / 2,
+        g = svg
+            .append("g")
+            .attr(
+                "transform",
+                "translate(" + width / 2 + "," + height / 2 + ")"
+            );
+
+    var x = d3
+        .scaleBand()
+        .range([0, 2 * Math.PI])
+        .align(0);
+
+    var y = d3.scaleRadial().range([innerRadius, outerRadius]);
+
+    var z = d3.scaleOrdinal().range(["#133c55"]);
+
+    x.domain(
+        data.map(function (d) {
+            if (d) {
+                console.log(d.state);
+                return d.state;
+            } else {
+                return "";
+            }
+        })
+    );
+    y.domain([0, 100]);
+
+    console.log(d3.stack().keys(["probability"])(data));
+    g.append("g")
+        .selectAll("g")
+        .data(d3.stack().keys(["probability"])(data))
+        .enter()
+        .append("g")
+        .attr("fill", function (d) {
+            return z(d.key);
+        })
+        .selectAll("path")
+        .data(function (d) {
+            return d;
+        })
+        .enter()
+        .append("path")
+        .attr(
+            "d",
+            d3
+                .arc()
+                .innerRadius(function (d) {
+                    return y(d[0]);
+                })
+                .outerRadius(function (d) {
+                    return y(d[1]);
+                })
+                .startAngle(function (d) {
+                    return x(d.data.state);
+                })
+                .endAngle(function (d) {
+                    return x(d.data.state) + x.bandwidth();
+                })
+                .padAngle(0.01)
+                .padRadius(innerRadius)
+        );
+
+    var label = g
+        .append("g")
+        .selectAll("g")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("text-anchor", "middle")
+        .attr("transform", function (d) {
+            return (
+                "rotate(" +
+                (((x(d.state) + x.bandwidth() / 2) * 180) / Math.PI - 90) +
+                ")translate(" +
+                (outerRadius + 40) +
+                ",0)"
+            );
+        });
+
+    label.append("line").attr("x2", -5).attr("stroke", "#000");
+
+    label
+        .append("text")
+        .attr("transform", function (d) {
+            return (x(d.state) + x.bandwidth() / 2 + Math.PI / 2) %
+                (2 * Math.PI) <
+                Math.PI
+                ? "rotate(90)translate(0,16)"
+                : "rotate(-90)translate(0,-9)";
+        })
+        .text(function (d) {
+            return d.state;
+        });
+
+    var yAxis = g.append("g").attr("text-anchor", "middle");
+
+    var yTick = yAxis
+        .selectAll("g")
+        .data(y.ticks(5).slice(1))
+        .enter()
+        .append("g");
+
+    yTick
+        .append("circle")
+        .attr("fill", "none")
+        .attr("stroke", "#000")
+        .attr("r", y);
+
+    yTick
+        .append("text")
+        .attr("y", function (d) {
+            return -y(d);
+        })
+        .attr("dy", "0.35em")
+        .attr("fill", "none")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 5)
+        .text(y.tickFormat(5, "s"));
+
+    yTick
+        .append("text")
+        .attr("y", function (d) {
+            return -y(d);
+        })
+        .attr("dy", "0.35em")
+        .text(y.tickFormat(5, "s"));
+
+    yAxis
+        .append("text")
+        .attr("y", function (d) {
+            return -y(y.ticks(5).pop());
+        })
+        .attr("dy", "-1em");
 };
 
 window.onload = () => {
