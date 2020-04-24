@@ -1366,8 +1366,6 @@ var examples = require("./examples");
 var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
   var table = document.querySelector("#amplitudes");
   table.innerHTML = "";
-  var hideBtn = document.querySelector("#hide-impossible");
-  var hide = hideBtn.innerHTML !== "(hide impossible)";
   document.querySelector("#amplitudes-container").style.display = "block";
 
   for (var i = 0; i < amplitudes.x.length; i++) {
@@ -1386,11 +1384,7 @@ var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
     prob += Math.pow(amplitudes.y[i], 2);
 
     if (prob < numeric.epsilon) {
-      if (hide) {
-        continue;
-      } else {
-        row.style.color = "#ccc";
-      }
+      row.style.color = "#ccc";
     }
 
     var probability = (prob * 100).toFixed(4) + "%";
@@ -1407,15 +1401,6 @@ window.onload = function () {
   var canvas = document.getElementById("canvas");
   var app = new Application(canvas, 2);
   var editor = app.editor;
-  var hideBtn = document.querySelector("#hide-impossible");
-
-  hideBtn.onclick = function (evt) {
-    evt.preventDefault();
-    var hide = "(hide impossible)";
-    var show = "(show all)";
-    hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
-    document.querySelector("#evaluate").click();
-  };
 
   document.querySelector("#reset").onclick = function (evt) {
     evt.preventDefault();

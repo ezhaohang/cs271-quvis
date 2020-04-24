@@ -25,7 +25,7 @@ SECRET_KEY = '_mx=_iv*qimd8!0d6xhdpwg5wr7nyyth*gx$v(v!rb#ta!5_w-'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['quvis.pythonanywhere.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'quvis.pythonanywhere.com']
 
 
 # Application definition

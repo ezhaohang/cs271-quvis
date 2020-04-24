@@ -6,8 +6,6 @@ const examples = require("./examples");
 const displayAmplitudes = (nqubits, amplitudes) => {
     const table = document.querySelector("#amplitudes");
     table.innerHTML = "";
-    const hideBtn = document.querySelector("#hide-impossible");
-    const hide = hideBtn.innerHTML !== "(hide impossible)";
     document.querySelector("#amplitudes-container").style.display = "block";
     for (let i = 0; i < amplitudes.x.length; i++) {
         let amplitude = "";
@@ -22,11 +20,7 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         let prob = Math.pow(amplitudes.x[i], 2);
         prob += Math.pow(amplitudes.y[i], 2);
         if (prob < numeric.epsilon) {
-            if (hide) {
-                continue;
-            } else {
-                row.style.color = "#ccc";
-            }
+            row.style.color = "#ccc";
         }
         const probability = (prob * 100).toFixed(4) + "%";
         row.innerHTML = `
@@ -38,21 +32,12 @@ const displayAmplitudes = (nqubits, amplitudes) => {
 };
 
 window.onload = () => {
-    document.querySelector("#toolbar").onselectstart = evt => false;
+    document.querySelector("#toolbar").onselectstart = (evt) => false;
     const canvas = document.getElementById("canvas");
     const app = new Application(canvas, 2);
     const editor = app.editor;
 
-    const hideBtn = document.querySelector("#hide-impossible");
-    hideBtn.onclick = evt => {
-        evt.preventDefault();
-        const hide = "(hide impossible)";
-        const show = "(show all)";
-        hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
-        document.querySelector("#evaluate").click();
-    };
-
-    document.querySelector("#reset").onclick = evt => {
+    document.querySelector("#reset").onclick = (evt) => {
         evt.preventDefault();
         const ok = confirm("Clear entire circuit?");
         if (ok) {
@@ -61,7 +46,7 @@ window.onload = () => {
         }
     };
 
-    document.querySelector("#evaluate").onclick = evt => {
+    document.querySelector("#evaluate").onclick = (evt) => {
         evt.preventDefault();
         app.circuit.gates.sort((a, b) => a.time - b.time);
         const size = Math.pow(2, app.circuit.nqubits);
@@ -71,7 +56,7 @@ window.onload = () => {
         );
         const state = editor.input.join("");
         amplitudes.x[parseInt(state, 2)] = 1;
-        app.applyCircuit(app.circuit, amplitudes, amplitudes => {
+        app.applyCircuit(app.circuit, amplitudes, (amplitudes) => {
             displayAmplitudes(
                 app.circuit.nqubits,
                 amplitudes.div(amplitudes.norm2())
@@ -79,7 +64,7 @@ window.onload = () => {
         });
     };
 
-    document.body.onkeydown = evt => {
+    document.body.onkeydown = (evt) => {
         // Catch hotkeys
         if (evt.which == "S".charCodeAt(0) && evt.ctrlKey) {
             evt.preventDefault();
@@ -90,7 +75,7 @@ window.onload = () => {
         }
     };
 
-    document.querySelector("#compile").onclick = evt => {
+    document.querySelector("#compile").onclick = (evt) => {
         evt.preventDefault();
         app.circuit.gates.sort((a, b) => a.time - b.time);
         const size = Math.pow(2, app.circuit.nqubits);
@@ -98,7 +83,7 @@ window.onload = () => {
             numeric.identity(size),
             numeric.rep([size, size], 0)
         );
-        app.applyCircuit(app.circuit, U, U => {
+        app.applyCircuit(app.circuit, U, (U) => {
             const name = prompt("Name of gate:", "F");
             if (name) {
                 if (app.workspace.gates[name]) {
@@ -112,23 +97,23 @@ window.onload = () => {
                         qubits: app.circuit.nqubits,
                         matrix: U,
                         circuit: app.circuit.copy(),
-                        input: app.editor.input
+                        input: app.editor.input,
                     });
                 }
             }
         });
     };
 
-    document.querySelector("#exportImage").onclick = evt => {
+    document.querySelector("#exportImage").onclick = (evt) => {
         evt.preventDefault();
         const oldlength = editor.length;
-        const times = app.circuit.gates.map(gate => gate.time);
+        const times = app.circuit.gates.map((gate) => gate.time);
         editor.resize(app.circuit.nqubits, Math.max.apply(Math, times) + 1);
         window.open(editor.draw.canvas.toDataURL("image/png"));
         editor.resize(app.circuit.nqubits, oldlength);
     };
 
-    document.querySelector("#exportMatrix").onclick = evt => {
+    document.querySelector("#exportMatrix").onclick = (evt) => {
         evt.preventDefault();
         app.circuit.gates.sort((a, b) => a.time - b.time);
         const size = Math.pow(2, app.circuit.nqubits);
@@ -136,7 +121,7 @@ window.onload = () => {
             numeric.identity(size),
             numeric.rep([size, size], 0)
         );
-        app.applyCircuit(app.circuit, U, U => {
+        app.applyCircuit(app.circuit, U, (U) => {
             const child = window.open(
                 "",
                 "matrix.csv",
@@ -157,13 +142,13 @@ window.onload = () => {
         });
     };
 
-    document.querySelector("#importJSON").onclick = evt => {
+    document.querySelector("#importJSON").onclick = (evt) => {
         evt.preventDefault();
         const input = document.createElement("input");
         input.type = "file";
-        input.onchange = evt => {
+        input.onchange = (evt) => {
             const reader = new FileReader();
-            reader.onloadend = evt => {
+            reader.onloadend = (evt) => {
                 if (evt.target.readyState !== FileReader.DONE) {
                     return;
                 }
@@ -174,7 +159,7 @@ window.onload = () => {
         input.click();
     };
 
-    document.querySelector("#exportJSON").onclick = evt => {
+    document.querySelector("#exportJSON").onclick = (evt) => {
         evt.preventDefault();
         const out = app.exportWorkspace();
         out.version = FILE_VERSION;
@@ -186,9 +171,9 @@ window.onload = () => {
         a.click();
     };
 
-    const resize = size => {
+    const resize = (size) => {
         document.querySelector("#nqubits > span").innerHTML = "Qubits: " + size;
-        const newGates = app.circuit.gates.filter(gate => {
+        const newGates = app.circuit.gates.filter((gate) => {
             return gate.range[1] < size;
         });
         if (newGates.length < app.circuit.gates.length) {
@@ -211,7 +196,7 @@ window.onload = () => {
         const a = document.createElement("a");
         a.href = "#";
         a.innerHTML = i;
-        a.onclick = evt => {
+        a.onclick = (evt) => {
             evt.preventDefault();
             resize(i);
         };
@@ -240,7 +225,7 @@ window.onload = () => {
         ["2 Qubit QFT", examples.QFT2],
         ["4 Qubit QFT", examples.QFT4],
         ["Grover's Algorithm", examples.GROVERS_ALGORITHM],
-        ["Quantum Teleportation", examples.TELEPORTATION]
+        ["Quantum Teleportation", examples.TELEPORTATION],
     ];
     const examplesEl = document.querySelector("#examples");
     EXAMPLES.forEach((example, i) => {
@@ -249,7 +234,7 @@ window.onload = () => {
         const a = document.createElement("a");
         a.href = "#";
         a.appendChild(document.createTextNode(name));
-        a.onclick = evt => {
+        a.onclick = (evt) => {
             evt.preventDefault();
             open("?example=" + example[0]);
         };
@@ -261,15 +246,15 @@ window.onload = () => {
         examplesEl.appendChild(li);
     });
 
-    document.querySelector("#about").onclick = evt => {
+    document.querySelector("#about").onclick = (evt) => {
         document.querySelector("#modal").style.display = "block";
     };
 
-    document.querySelector("#modal").onclick = evt => {
+    document.querySelector("#modal").onclick = (evt) => {
         document.querySelector("#modal").style.display = "none";
     };
 
-    document.querySelector("#modal > div").onclick = evt => {
+    document.querySelector("#modal > div").onclick = (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
     };
