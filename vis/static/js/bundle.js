@@ -7,15 +7,15 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Circuit = require('./circuit');
+var Circuit = require("./circuit");
 
-var Draw = require('./draw');
+var Draw = require("./draw");
 
-var Editor = require('./editor');
+var Editor = require("./editor");
 
-var Gate = require('./gate');
+var Gate = require("./gate");
 
-var Workspace = require('./workspace');
+var Workspace = require("./workspace");
 
 module.exports = /*#__PURE__*/function () {
   function Application(canvas, nqubits) {
@@ -25,49 +25,26 @@ module.exports = /*#__PURE__*/function () {
     this.workspace = new Workspace(app);
     var circuit = this.circuit = new Circuit(app, nqubits);
     var editor = this.editor = new Editor(app, canvas);
-    var toolbar = document.querySelector('#toolbar');
+    var toolbar = document.querySelector("#toolbar");
 
     toolbar.onclick = function (evt) {
       var target = findParent(evt.target, function (el) {
-        return el.className && el.className.indexOf('gate') > -1;
+        return el.className && el.className.indexOf("gate") > -1;
       });
 
       if (target) {
-        var current = document.querySelector('#toolbar div.gate.active');
+        var current = document.querySelector("#toolbar div.gate.active");
 
         if (current) {
-          current.className = 'gate';
+          current.className = "gate";
         }
 
-        target.className = 'active gate';
+        target.className = "active gate";
         editor.activeGate = app.workspace.gates[target.dataset.type];
       }
     };
 
-    var userTools = document.querySelector('#toolbar .user');
-
-    userTools.ondblclick = function (evt) {
-      // Open gate from toolbar
-      evt.preventDefault();
-      var target = findParent(evt.target, function (el) {
-        return el.className && el.className.indexOf('gate') > -1;
-      });
-
-      if (target) {
-        var ok = true;
-
-        if (app.circuit.gates.length > 0) {
-          // Only confirm if circuit isn't empty
-          ok = confirm('Load gate: ' + target.dataset.type + '?');
-        }
-
-        if (ok) {
-          app.editCircuit(app.workspace.gates[target.dataset.type]);
-        }
-      }
-    };
-
-    document.querySelectorAll('#toolbar div.gate')[0].click();
+    document.querySelectorAll("#toolbar div.gate")[0].click();
   }
   /*
   Set current "circuit" to that of some "gate" and update the interface
@@ -80,7 +57,7 @@ module.exports = /*#__PURE__*/function () {
     value: function editCircuit(gate) {
       this.circuit = gate.circuit;
       this.editor.resize(gate.circuit.nqubits, this.editor.length);
-      document.querySelector('#nqubits > span').innerHTML = 'Qubits: ' + this.circuit.nqubits;
+      document.querySelector("#nqubits > span").innerHTML = "Qubits: " + this.circuit.nqubits;
 
       if (gate.input) {
         this.editor.input = gate.input;
@@ -99,29 +76,29 @@ module.exports = /*#__PURE__*/function () {
   }, {
     key: "addToolbarButton",
     value: function addToolbarButton(type, name, title) {
-      var canvas = document.createElement('canvas');
+      var canvas = document.createElement("canvas");
       var draw = new Draw(canvas, 1, 1);
-      var tool = document.createElement('div');
+      var tool = document.createElement("div");
       tool.dataset.type = name;
       tool.className = "gate";
-      tool.title = title || '';
+      tool.title = title || "";
       draw.clear();
 
-      if (name == 'swap') {
+      if (name == "swap") {
         draw.swap(20, 20);
-      } else if (name == 'control') {
+      } else if (name == "control") {
         draw.control(20, 20);
-      } else if (name == 'cnot') {
+      } else if (name == "cnot") {
         draw.not(20, 20);
       } else {
         draw.gate(20, 20, 1, name.toUpperCase());
       }
 
-      var img = document.createElement('img');
+      var img = document.createElement("img");
       img.src = canvas.toDataURL();
       tool.appendChild(img);
-      tool.appendChild(document.createElement('div'));
-      document.querySelector('#toolbar .' + type).appendChild(tool);
+      tool.appendChild(document.createElement("div"));
+      document.querySelector("#toolbar").appendChild(tool);
     }
     /*
     Load a new workspace in from a json object, overwriting the current one.
@@ -141,8 +118,7 @@ module.exports = /*#__PURE__*/function () {
   }, {
     key: "loadWorkspace",
     value: function loadWorkspace(json) {
-      document.querySelector('#toolbar .std').innerHTML = '';
-      document.querySelector('#toolbar .user').innerHTML = '';
+      document.querySelector("#toolbar").innerHTML = "";
       this.workspace = new Workspace(this);
 
       if (json.gates) {
@@ -162,7 +138,7 @@ module.exports = /*#__PURE__*/function () {
       this.circuit = Circuit.load(this, json.qubits, json.circuit);
       this.editor.resize(this.circuit.nqubits, this.editor.length);
       this.editor.input = json.input;
-      document.querySelector('#nqubits > span').innerHTML = 'Qubits: ' + this.circuit.nqubits;
+      document.querySelector("#nqubits > span").innerHTML = "Qubits: " + this.circuit.nqubits;
       this.compileAll();
       this.editor.render();
     }
@@ -190,7 +166,7 @@ module.exports = /*#__PURE__*/function () {
           name: key,
           qubits: gate.circuit.nqubits,
           circuit: gate.circuit.toJSON(),
-          title: ''
+          title: ""
         });
       }
 
@@ -202,53 +178,20 @@ module.exports = /*#__PURE__*/function () {
       };
     }
     /*
-    Asynchronously compile every user defined gate in the workspace.
-    */
-
-  }, {
-    key: "compileAll",
-    value: function compileAll() {
-      var app = this;
-      var todo = [];
-      var workspace = this.workspace;
-      document.querySelectorAll('#toolbar .user div.gate').forEach(function (el) {
-        var type = workspace.gates[el.dataset.type];
-
-        if (!type.matrix) {
-          todo.push(type);
-        }
-      });
-
-      var loop = function loop(i) {
-        if (i < todo.length) {
-          var n = Math.pow(2, todo[i].circuit.nqubits);
-          var I = new numeric.T(numeric.identity(n), numeric.rep([n, n], 0));
-          app.applyCircuit(todo[i].circuit, I, function (U) {
-            todo[i].matrix = U;
-            setTimeout(function () {
-              return loop(i + 1);
-            }, 1);
-          });
-        }
-      };
-
-      loop(0);
-    }
-    /*
     Applies circuit to matrix and passes result to callback
     */
 
   }, {
     key: "applyCircuit",
     value: function applyCircuit(circuit, x, callback) {
-      var wrapper = document.querySelector('#progress');
-      wrapper.style.display = 'inline-block';
-      var progress = document.querySelector('#progress > div');
+      var wrapper = document.querySelector("#progress");
+      wrapper.style.display = "inline-block";
+      var progress = document.querySelector("#progress > div");
       progress.width = 0;
       circuit.evaluate(x, function (percent) {
         progress.style.width = wrapper.clientWidth * percent;
       }, function (x) {
-        wrapper.style.display = 'none';
+        wrapper.style.display = "none";
         callback(x);
       });
     }
@@ -430,9 +373,9 @@ module.exports = /*#__PURE__*/function () {
     this.gfx = new Processing(canvas);
     this.nqubits = nqubits;
     this.length = length;
-    this.gfx.textFont(this.gfx.loadFont('monospace'));
+    this.gfx.textFont(this.gfx.loadFont("../fonts/RobotoCondensed-Regular.ttf"));
     this.gfx.textAlign(this.gfx.CENTER);
-    this.gfx.size(length * 40, nqubits * 40);
+    this.gfx.size(length * 50, nqubits * 50);
   }
 
   _createClass(Draw, [{
@@ -440,15 +383,15 @@ module.exports = /*#__PURE__*/function () {
     value: function resize(nqubits, length) {
       this.nqubits = nqubits;
       this.length = length;
-      this.gfx.size(length * 40, nqubits * 40);
+      this.gfx.size(length * 50, nqubits * 50);
     }
   }, {
     key: "clear",
     value: function clear() {
-      this.gfx.background(255);
+      this.gfx.background(246, 252, 255);
 
       for (var i = 0; i < this.nqubits; i++) {
-        this.gfx.line(0, i * 40 + 20, this.length * 40, i * 40 + 20);
+        this.gfx.line(0, i * 50 + 25, this.length * 50, i * 50 + 25);
       }
     }
   }, {
@@ -458,7 +401,7 @@ module.exports = /*#__PURE__*/function () {
       this.gfx.fill(r, g, b, a);
 
       for (var i = 0; i < qubits.length; i++) {
-        this.gfx.rect(x, qubits[i] * 40, 40, 40);
+        this.gfx.rect(x, qubits[i] * 50, 50, 50);
       }
 
       this.gfx.fill(255);
@@ -470,36 +413,39 @@ module.exports = /*#__PURE__*/function () {
       this.gfx.textSize(17);
       this.gfx.noStroke();
       this.gfx.fill(255);
-      this.gfx.rect(x - 20, y - 17, 40, h * 40 - 6);
+      this.gfx.rect(x - 20, y - 17, 50, h * 50 - 6);
       this.gfx.fill(0);
-      this.gfx.text(state ? '|1>' : '|0>', x, y + h / 2 * 40 - 15);
+      this.gfx.text(state ? "|1>" : "|0>", x, y + h / 2 * 50 - 15);
       this.gfx.fill(255);
-      this.gfx.stroke(0);
+      this.gfx.stroke();
       this.gfx.textSize(11);
     }
   }, {
     key: "gate",
     value: function gate(x, y, h, text) {
-      this.gfx.fill(255);
-      this.gfx.rect(x - 17, y - 17, 40 - 6, h * 40 - 6);
-      this.gfx.fill(0);
-      this.gfx.text(text, x, y + h / 2 * 40 - 17);
-      this.gfx.fill(255);
+      this.gfx.fill(19, 60, 85);
+      this.gfx.rect(x - 17, y - 17, 50 - 6, h * 50 - 6, 5);
+      this.gfx.fill(246, 252, 255);
+      this.gfx.textSize(18);
+      this.gfx.textAlign(this.gfx.CENTER, this.gfx.CENTER);
+      this.gfx.text(text, x + 6, y + h / 2 * 50 - 21);
+      this.gfx.fill(19, 60, 85);
     }
   }, {
     key: "swap",
     value: function swap(x, y) {
-      this.gfx.line(x - 5, y - 5, x + 5, y + 5);
-      this.gfx.line(x - 5, y + 5, x + 5, y - 5);
+      this.gfx.stroke(19, 60, 85);
+      this.gfx.line(x, y, x + 10, y + 10);
+      this.gfx.line(x, y + 10, x + 10, y);
     }
   }, {
     key: "not",
     value: function not(x, y) {
-      this.gfx.noFill();
-      this.gfx.ellipse(x, y, 20, 20);
-      this.gfx.fill(255);
-      this.gfx.line(x - 9, y, x + 9, y);
-      this.gfx.line(x, y - 9, x, y + 9);
+      this.gfx.fill(19, 60, 85);
+      this.gfx.ellipse(x + 5, y + 5, 20, 20);
+      this.gfx.stroke(246, 252, 255);
+      this.gfx.line(x - 6, y + 5, x + 14, y + 5);
+      this.gfx.line(x + 5, y - 6, x + 5, y + 14);
     }
   }, {
     key: "wire",
@@ -509,8 +455,8 @@ module.exports = /*#__PURE__*/function () {
   }, {
     key: "control",
     value: function control(x, y) {
-      this.gfx.fill(0);
-      this.gfx.ellipse(x, y, 10, 10);
+      this.gfx.fill(19, 60, 85);
+      this.gfx.ellipse(x + 5, y + 5, 10, 10);
     }
   }]);
 
@@ -526,9 +472,9 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Draw = require('./draw');
+var Draw = require("./draw");
 
-var Gate = require('./gate');
+var Gate = require("./gate");
 
 module.exports = /*#__PURE__*/function () {
   function Editor(app, canvas) {
@@ -572,22 +518,22 @@ module.exports = /*#__PURE__*/function () {
 
       node.onmousemove = function (evt2) {
         // Handles highlighting while dragging
-        if (typeof evt2.offsetY == 'undefined') {
+        if (typeof evt2.offsetY == "undefined") {
           evt2.offsetY = evt2.layerY - node.offsetTop;
         }
 
-        var qubits = editor.getSelection(qubit, Math.floor(evt2.offsetY / 40));
+        var qubits = editor.getSelection(qubit, Math.floor(evt2.offsetY / 50));
         editor.render();
-        editor.draw.selection(time * 40, qubits, 255, 153, 0, 128);
+        editor.draw.selection(time * 50, qubits, 255, 153, 0, 128);
       };
 
       node.onmouseup = function (evt2) {
-        if (typeof evt2.offsetY == 'undefined') {
+        if (typeof evt2.offsetY == "undefined") {
           evt2.offsetY = evt2.pageY - node.offsetTop;
         } // Get array of selected qubits
 
 
-        var qubits = editor.getSelection(qubit, Math.floor(evt2.offsetY / 40));
+        var qubits = editor.getSelection(qubit, Math.floor(evt2.offsetY / 50));
         var type = editor.activeGate;
 
         if (time == 0) {
@@ -595,7 +541,7 @@ module.exports = /*#__PURE__*/function () {
           for (var i = 0; i < qubits.length; i++) {
             editor.input[qubits[i]] = 1 - editor.input[qubits[i]];
           }
-        } else if (type.name == 'control') {
+        } else if (type.name == "control") {
           // Add control to a gate (if possible)
           var collisionA = false;
           var collisionB = false;
@@ -620,7 +566,7 @@ module.exports = /*#__PURE__*/function () {
             for (var _i = 0; _i < qubits.length; _i++) {
               editor.createGate(type, time, [qubits[_i]]);
             }
-          } else if (type.qubits == qubits.length || type.qubits == Infinity || type.name == 'cnot' || type.name == 'swap') {
+          } else if (type.qubits == qubits.length || type.qubits == Infinity || type.name == "cnot" || type.name == "swap") {
             editor.createGate(type, time, qubits);
           }
         } // Clear mouse events
@@ -682,32 +628,32 @@ module.exports = /*#__PURE__*/function () {
 
       node.onmousemove = function (evt) {
         // Highlight tile under mouse
-        if (typeof evt.offsetX == 'undefined') {
+        if (typeof evt.offsetX == "undefined") {
           evt.offsetX = evt.pageX - node.offsetLeft;
         }
 
-        if (typeof evt.offsetY == 'undefined') {
+        if (typeof evt.offsetY == "undefined") {
           evt.offsetY = evt.pageY - node.offsetTop;
         }
 
         editor.render();
-        var x = Math.floor(evt.offsetX / 40);
-        var y = Math.floor(evt.offsetY / 40);
-        editor.draw.selection(x * 40, [y], 119, 153, 255, 64);
+        var x = Math.floor(evt.offsetX / 50);
+        var y = Math.floor(evt.offsetY / 50);
+        editor.draw.selection(x * 50, [y], 119, 153, 255, 64);
       };
 
       node.onmousedown = function (evt) {
         // Dispatch left/right click events
-        if (typeof evt.offsetX == 'undefined') {
+        if (typeof evt.offsetX == "undefined") {
           evt.offsetX = evt.pageX - node.offsetLeft;
         }
 
-        if (typeof evt.offsetY == 'undefined') {
+        if (typeof evt.offsetY == "undefined") {
           evt.offsetY = evt.pageY - node.offsetTop;
         }
 
-        var x = Math.floor(evt.offsetX / 40);
-        var y = Math.floor(evt.offsetY / 40);
+        var x = Math.floor(evt.offsetX / 50);
+        var y = Math.floor(evt.offsetY / 50);
 
         if (evt.which == 1) {
           editor.leftClick(x, y);
@@ -731,11 +677,11 @@ module.exports = /*#__PURE__*/function () {
       }
 
       if (!collision) {
-        if (type.name == 'cnot' || type.name == 'swap') {
+        if (type.name == "cnot" || type.name == "swap") {
           // Create cnot or swap (gates that can span multiple qubits but only
           // actually use two.
           if (qubits.length < 2) {
-            return console.warn(type + ' gate requires two qubits');
+            return console.warn(type + " gate requires two qubits");
           } else {
             qubits = [qubits[0], qubits[qubits.length - 1]];
           }
@@ -743,7 +689,7 @@ module.exports = /*#__PURE__*/function () {
           qubits.sort();
         }
 
-        if (type.name == 'cnot') {
+        if (type.name == "cnot") {
           // cnot is really a controlled x
           circuit.addGate(new Gate(this.app.workspace.gates.x, time, [qubits[1]], [qubits[0]]));
         } else {
@@ -788,7 +734,7 @@ module.exports = /*#__PURE__*/function () {
       }
 
       for (var _i3 = 0; _i3 < this.app.circuit.nqubits; _i3++) {
-        this.draw.qubit(20, 20 + _i3 * 40, 1, this.input[_i3]);
+        this.draw.qubit(20, 20 + _i3 * 50, 1, this.input[_i3]);
       }
     }
   }]);
@@ -1328,19 +1274,19 @@ module.exports = /*#__PURE__*/function () {
   }, {
     key: "render",
     value: function render(draw) {
-      var x = this.time * 40 + 20;
-      var y1 = this.targets[0] * 40 + 20;
+      var x = this.time * 50 + 20;
+      var y1 = this.targets[0] * 50 + 20;
 
       for (var i = 0; i < this.controls.length; i++) {
-        var y2 = this.controls[i] * 40 + 20;
+        var y2 = this.controls[i] * 50 + 20;
         draw.control(x, y2);
         draw.wire(x, y1, y2);
       }
 
-      if (this.type.name == 'x' && this.controls.length > 0) {
+      if (this.type.name == "x" && this.controls.length > 0) {
         draw.not(x, y1);
-      } else if (this.type.name == 'swap') {
-        var _y = this.targets[1] * 40 + 20;
+      } else if (this.type.name == "swap") {
+        var _y = this.targets[1] * 50 + 20;
 
         draw.swap(x, y1);
         draw.wire(x, y1, _y);
@@ -1368,7 +1314,6 @@ var data = [];
 var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
   var table = document.querySelector("#state-table");
   table.innerHTML = "";
-  document.querySelector("#amplitudes-container").style.display = "block";
   data = [];
 
   for (var i = 0; i < amplitudes.x.length; i++) {
@@ -1823,7 +1768,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var quantum = require('./quantum');
+var quantum = require("./quantum");
 
 module.exports = /*#__PURE__*/function () {
   function Workspace(app) {
@@ -1838,86 +1783,86 @@ module.exports = /*#__PURE__*/function () {
     key: "installStandardGates",
     value: function installStandardGates() {
       this.addGate({
-        name: 'h',
+        name: "h",
         qubits: 1,
         matrix: quantum.h,
-        title: 'Hadamard'
+        title: "Hadamard"
       }, true);
       this.addGate({
-        name: 'x',
+        name: "x",
         qubits: 1,
         matrix: quantum.x,
-        title: 'Pauli-X'
+        title: "Pauli-X"
       }, true);
       this.addGate({
-        name: 'y',
+        name: "y",
         qubits: 1,
         matrix: quantum.y,
-        title: 'Pauli-Y'
+        title: "Pauli-Y"
       }, true);
       this.addGate({
-        name: 'z',
+        name: "z",
         qubits: 1,
         matrix: quantum.z,
-        title: 'Pauli-Z'
+        title: "Pauli-Z"
       }, true);
       this.addGate({
-        name: 's',
+        name: "s",
         qubits: 1,
         matrix: quantum.s,
-        title: 'Phase Gate'
+        title: "Phase Gate"
       }, true);
       this.addGate({
-        name: 't',
+        name: "t",
         qubits: 1,
         matrix: quantum.r4,
-        title: 'Same as R4'
+        title: "Same as R4"
       }, true);
       this.addGate({
-        name: 'cnot',
+        name: "cnot",
         qubits: 2,
         matrix: quantum.cnot,
-        title: 'Controlled Not'
+        title: "Controlled Not"
       }, true);
       this.addGate({
-        name: 'control',
-        title: 'Control'
+        name: "control",
+        title: "Control"
       }, true);
       this.addGate({
-        name: 'swap',
+        name: "swap",
         qubits: 2,
         matrix: quantum.swap,
-        title: 'Swap'
+        title: "Swap"
       }, true);
       this.addGate({
-        name: 'r2',
+        name: "r2",
         qubits: 1,
         matrix: quantum.r2,
-        title: 'Pi/2 Phase Rotatation'
+        title: "Pi/2 Phase Rotatation"
       }, true);
       this.addGate({
-        name: 'r4',
+        name: "r4",
         qubits: 1,
         matrix: quantum.r4,
-        title: 'Pi/4 Phase Rotatation'
+        title: "Pi/4 Phase Rotatation"
       }, true);
       this.addGate({
-        name: 'r8',
+        name: "r8",
         qubits: 1,
         matrix: quantum.r8,
-        title: 'Pi/8 Phase Rotatation'
+        title: "Pi/8 Phase Rotatation"
       }, true);
       this.addGate({
-        name: 'qft',
+        name: "qft",
         qubits: Infinity,
         fn: quantum.qft,
-        title: 'Quantum Fourier Transform'
+        title: "Quantum Fourier Transform"
       }, true);
       this.addGate({
-        name: 'srn',
+        name: "srn",
         qubits: 1,
         matrix: quantum.srn,
-        title: 'Sqrt(Not)'
+        title: "Sqrt(Not)"
       }, true);
     }
   }, {
@@ -1933,7 +1878,7 @@ module.exports = /*#__PURE__*/function () {
         input: ops.input,
         std: std || false
       };
-      this.app.addToolbarButton(std ? 'std' : 'user', ops.name, ops.title);
+      this.app.addToolbarButton("std", ops.name, ops.title);
     }
   }]);
 

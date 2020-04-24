@@ -1,50 +1,33 @@
-const Circuit = require('./circuit');
-const Draw = require('./draw');
-const Editor = require('./editor');
-const Gate = require('./gate');
-const Workspace = require('./workspace');
+const Circuit = require("./circuit");
+const Draw = require("./draw");
+const Editor = require("./editor");
+const Gate = require("./gate");
+const Workspace = require("./workspace");
 
 module.exports = class Application {
-
     constructor(canvas, nqubits) {
         const app = this;
         this.workspace = new Workspace(app);
-        const circuit = this.circuit = new Circuit(app, nqubits);
-        const editor = this.editor = new Editor(app, canvas);
-        const toolbar = document.querySelector('#toolbar');
-        toolbar.onclick = evt => {
-            let target = findParent(evt.target, el => {
-                return el.className && el.className.indexOf('gate') > -1;
+        const circuit = (this.circuit = new Circuit(app, nqubits));
+        const editor = (this.editor = new Editor(app, canvas));
+        const toolbar = document.querySelector("#toolbar");
+        toolbar.onclick = (evt) => {
+            let target = findParent(evt.target, (el) => {
+                return el.className && el.className.indexOf("gate") > -1;
             });
             if (target) {
-                const current = document.querySelector('#toolbar div.gate.active');
+                const current = document.querySelector(
+                    "#toolbar div.gate.active"
+                );
                 if (current) {
-                    current.className = 'gate';
+                    current.className = "gate";
                 }
-                target.className = 'active gate';
+                target.className = "active gate";
                 editor.activeGate = app.workspace.gates[target.dataset.type];
             }
         };
-        const userTools = document.querySelector('#toolbar .user');
-        userTools.ondblclick = evt => {
-            // Open gate from toolbar
-            evt.preventDefault();
-            let target = findParent(evt.target, el => {
-                return el.className && el.className.indexOf('gate') > -1;
-            });
-            if (target) {
-                let ok = true;
-                if (app.circuit.gates.length > 0) {
-                    // Only confirm if circuit isn't empty
-                    ok = confirm('Load gate: ' + target.dataset.type + '?');
-                }
-                if (ok) {
-                    app.editCircuit(app.workspace.gates[target.dataset.type]);
-                }
-            }
-        };
 
-        document.querySelectorAll('#toolbar div.gate')[0].click();
+        document.querySelectorAll("#toolbar div.gate")[0].click();
     }
 
     /*
@@ -54,7 +37,8 @@ module.exports = class Application {
     editCircuit(gate) {
         this.circuit = gate.circuit;
         this.editor.resize(gate.circuit.nqubits, this.editor.length);
-        document.querySelector('#nqubits > span').innerHTML = 'Qubits: ' + this.circuit.nqubits;
+        document.querySelector("#nqubits > span").innerHTML =
+            "Qubits: " + this.circuit.nqubits;
         if (gate.input) {
             this.editor.input = gate.input;
         }
@@ -69,27 +53,27 @@ module.exports = class Application {
     "title" is a human-readable name for the gate
     */
     addToolbarButton(type, name, title) {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         const draw = new Draw(canvas, 1, 1);
-        const tool = document.createElement('div');
+        const tool = document.createElement("div");
         tool.dataset.type = name;
         tool.className = "gate";
-        tool.title = title || '';
+        tool.title = title || "";
         draw.clear();
-        if (name == 'swap') {
+        if (name == "swap") {
             draw.swap(20, 20);
-        } else if (name == 'control') {
+        } else if (name == "control") {
             draw.control(20, 20);
-        } else if (name == 'cnot') {
+        } else if (name == "cnot") {
             draw.not(20, 20);
         } else {
             draw.gate(20, 20, 1, name.toUpperCase());
         }
-        const img = document.createElement('img');
+        const img = document.createElement("img");
         img.src = canvas.toDataURL();
         tool.appendChild(img);
-        tool.appendChild(document.createElement('div'));
-        document.querySelector('#toolbar .' + type).appendChild(tool);
+        tool.appendChild(document.createElement("div"));
+        document.querySelector("#toolbar").appendChild(tool);
     }
 
     /*
@@ -107,11 +91,10 @@ module.exports = class Application {
     gates in the circuit.
     */
     loadWorkspace(json) {
-        document.querySelector('#toolbar .std').innerHTML = '';
-        document.querySelector('#toolbar .user').innerHTML = '';
+        document.querySelector("#toolbar").innerHTML = "";
         this.workspace = new Workspace(this);
         if (json.gates) {
-            for (let i = 0 ; i < json.gates.length; i++) {
+            for (let i = 0; i < json.gates.length; i++) {
                 const gate = json.gates[i];
                 this.workspace.addGate({
                     name: gate.name,
@@ -119,14 +102,15 @@ module.exports = class Application {
                     matrix: gate.matrix,
                     fn: gate.fn,
                     title: gate.title,
-                    circuit: Circuit.load(this, gate.qubits, gate.circuit)
+                    circuit: Circuit.load(this, gate.qubits, gate.circuit),
                 });
             }
         }
         this.circuit = Circuit.load(this, json.qubits, json.circuit);
         this.editor.resize(this.circuit.nqubits, this.editor.length);
         this.editor.input = json.input;
-        document.querySelector('#nqubits > span').innerHTML = 'Qubits: ' + this.circuit.nqubits;
+        document.querySelector("#nqubits > span").innerHTML =
+            "Qubits: " + this.circuit.nqubits;
         this.compileAll();
         this.editor.render();
     }
@@ -147,64 +131,37 @@ module.exports = class Application {
                 name: key,
                 qubits: gate.circuit.nqubits,
                 circuit: gate.circuit.toJSON(),
-                title: ''
+                title: "",
             });
         }
         return {
             gates: gates,
             circuit: this.circuit.toJSON(),
             qubits: this.circuit.nqubits,
-            input: this.editor.input
+            input: this.editor.input,
         };
-    }
-
-    /*
-    Asynchronously compile every user defined gate in the workspace.
-    */
-    compileAll() {
-        const app = this;
-        const todo = [];
-        const workspace = this.workspace;
-        document.querySelectorAll('#toolbar .user div.gate').forEach(el => {
-            const type = workspace.gates[el.dataset.type];
-            if (!type.matrix) {
-                todo.push(type);
-            }
-        });
-        const loop = i => {
-            if (i < todo.length) {
-                const n = Math.pow(2, todo[i].circuit.nqubits);
-                const I = new numeric.T(
-                    numeric.identity(n),
-                    numeric.rep([n, n], 0)
-                );
-                app.applyCircuit(todo[i].circuit, I, U => {
-                    todo[i].matrix = U;
-                    setTimeout(() => loop(i + 1), 1);
-                });
-            }
-        };
-        loop(0);
     }
 
     /*
     Applies circuit to matrix and passes result to callback
     */
     applyCircuit(circuit, x, callback) {
-        const wrapper = document.querySelector('#progress');
-        wrapper.style.display = 'inline-block';
-        const progress = document.querySelector('#progress > div');
+        const wrapper = document.querySelector("#progress");
+        wrapper.style.display = "inline-block";
+        const progress = document.querySelector("#progress > div");
         progress.width = 0;
-        circuit.evaluate(x, percent => {
-            progress.style.width = wrapper.clientWidth * percent;
-        }, x => {
-            wrapper.style.display = 'none';
-            callback(x);
-        });
+        circuit.evaluate(
+            x,
+            (percent) => {
+                progress.style.width = wrapper.clientWidth * percent;
+            },
+            (x) => {
+                wrapper.style.display = "none";
+                callback(x);
+            }
+        );
     }
-
-}
-
+};
 
 /*
 Search for ancestor in DOM.

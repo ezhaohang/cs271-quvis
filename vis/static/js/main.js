@@ -7,7 +7,6 @@ let data = [];
 const displayAmplitudes = (nqubits, amplitudes) => {
     const table = document.querySelector("#state-table");
     table.innerHTML = "";
-    document.querySelector("#amplitudes-container").style.display = "block";
     data = [];
     for (let i = 0; i < amplitudes.x.length; i++) {
         let amplitude = "";

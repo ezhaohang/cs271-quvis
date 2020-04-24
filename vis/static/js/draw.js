@@ -2,27 +2,28 @@
 Rendering primatives for circuit grid
 */
 module.exports = class Draw {
-
     constructor(canvas, nqubits, length) {
         this.canvas = canvas;
         this.gfx = new Processing(canvas);
         this.nqubits = nqubits;
         this.length = length;
-        this.gfx.textFont(this.gfx.loadFont('monospace'));
+        this.gfx.textFont(
+            this.gfx.loadFont("../fonts/RobotoCondensed-Regular.ttf")
+        );
         this.gfx.textAlign(this.gfx.CENTER);
-        this.gfx.size(length * 40, nqubits * 40);
+        this.gfx.size(length * 50, nqubits * 50);
     }
 
     resize(nqubits, length) {
         this.nqubits = nqubits;
         this.length = length;
-        this.gfx.size(length * 40, nqubits * 40);
+        this.gfx.size(length * 50, nqubits * 50);
     }
 
     clear() {
-        this.gfx.background(255);
+        this.gfx.background(246, 252, 255);
         for (let i = 0; i < this.nqubits; i++) {
-            this.gfx.line(0, i * 40 + 20, this.length * 40, i * 40 + 20);
+            this.gfx.line(0, i * 50 + 25, this.length * 50, i * 50 + 25);
         }
     }
 
@@ -30,7 +31,7 @@ module.exports = class Draw {
         this.gfx.noStroke();
         this.gfx.fill(r, g, b, a);
         for (let i = 0; i < qubits.length; i++) {
-            this.gfx.rect(x, qubits[i] * 40, 40, 40);
+            this.gfx.rect(x, qubits[i] * 50, 50, 50);
         }
         this.gfx.fill(255);
         this.gfx.stroke(0);
@@ -40,33 +41,36 @@ module.exports = class Draw {
         this.gfx.textSize(17);
         this.gfx.noStroke();
         this.gfx.fill(255);
-        this.gfx.rect(x - 20, y - 17, 40, h * 40 - 6);
+        this.gfx.rect(x - 20, y - 17, 50, h * 50 - 6);
         this.gfx.fill(0);
-        this.gfx.text(state ? '|1>' : '|0>', x, (y + (h / 2) * 40) - 15);
+        this.gfx.text(state ? "|1>" : "|0>", x, y + (h / 2) * 50 - 15);
         this.gfx.fill(255);
-        this.gfx.stroke(0);
+        this.gfx.stroke();
         this.gfx.textSize(11);
     }
 
     gate(x, y, h, text) {
-        this.gfx.fill(255);
-        this.gfx.rect(x - 17, y - 17, 40 - 6, h * 40 - 6);
-        this.gfx.fill(0);
-        this.gfx.text(text, x, (y + (h / 2) * 40) - 17);
-        this.gfx.fill(255);
+        this.gfx.fill(19, 60, 85);
+        this.gfx.rect(x - 17, y - 17, 50 - 6, h * 50 - 6, 5);
+        this.gfx.fill(246, 252, 255);
+        this.gfx.textSize(18);
+        this.gfx.textAlign(this.gfx.CENTER, this.gfx.CENTER);
+        this.gfx.text(text, x + 6, y + (h / 2) * 50 - 21);
+        this.gfx.fill(19, 60, 85);
     }
 
     swap(x, y) {
-        this.gfx.line(x - 5, y - 5, x + 5, y + 5);
-        this.gfx.line(x - 5, y + 5, x + 5, y - 5);
+        this.gfx.stroke(19, 60, 85);
+        this.gfx.line(x, y, x + 10, y + 10);
+        this.gfx.line(x, y + 10, x + 10, y);
     }
 
     not(x, y) {
-        this.gfx.noFill();
-        this.gfx.ellipse(x, y, 20, 20);
-        this.gfx.fill(255);
-        this.gfx.line(x - 9, y, x + 9, y);
-        this.gfx.line(x, y - 9, x, y + 9);
+        this.gfx.fill(19, 60, 85);
+        this.gfx.ellipse(x + 5, y + 5, 20, 20);
+        this.gfx.stroke(246, 252, 255);
+        this.gfx.line(x - 6, y + 5, x + 14, y + 5);
+        this.gfx.line(x + 5, y - 6, x + 5, y + 14);
     }
 
     wire(x, y1, y2) {
@@ -74,8 +78,7 @@ module.exports = class Draw {
     }
 
     control(x, y) {
-        this.gfx.fill(0);
-        this.gfx.ellipse(x, y, 10, 10);
+        this.gfx.fill(19, 60, 85);
+        this.gfx.ellipse(x + 5, y + 5, 10, 10);
     }
-
-}
+};

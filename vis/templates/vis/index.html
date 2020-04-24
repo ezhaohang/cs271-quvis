@@ -16,138 +16,50 @@
     </head>
 
     <body>
-        <div id="header">
-            <h1>QuVis</h1>
-        </div>
-        <div class="container" style="flex-direction: row;">
-            <div id="circuit-composer" style="flex-grow: 8;">
-                <h2>Circuit Composer</h2>
-            </div>
-            <div
-                class="container"
-                style="flex-direction: column; flex-grow: 1;"
-            >
-                <div id="add-gates">
-                    <h2>Add Gates</h2>
+        <div id="body-container">
+            <div class="container">
+                <div id="header">
+                    <h1>QuVis</h1>
+                    <h2 style="float: right;">
+                        <a id="about" href="#">About</a>
+                    </h2>
                 </div>
                 <div
-                    id="state-probabilities"
                     class="container"
-                    style="flex-direction: column;"
+                    style="flex: 1 1 auto; flex-direction: row;"
                 >
-                    <h2>State Probabilities</h2>
-                    <svg
-                        width="350"
-                        height="350"
-                        font-family="sans-serif"
-                        font-size="14"
-                    ></svg>
-                    <div id="state-table"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Milan's code -->
-
-        <div class="gates-container">
-            <div class="wrapper">
-                <gates>
-                    <div class="gates-controller">
-                        <table style="width: 100%;">
-                            <tr>
-                                <td>
-                                    <img
-                                        id="h-gate"
-                                        src="{% static 'vis/images/gates/hgate.svg' %}"
-                                        draggable="true"
-                                        ondragstart="drag(event)"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="x-gate"
-                                        src="{% static 'vis/images/gates/xgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="y-gate"
-                                        src="{% static 'vis/images/gates/ygate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="z-gate"
-                                        src="{% static 'vis/images/gates/zgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <img
-                                        class="s-gate"
-                                        src="{% static 'vis/images/gates/sgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="sdag-gate"
-                                        src="{% static 'vis/images/gates/sdaggate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="t-gate"
-                                        src="{% static 'vis/images/gates/tgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="tdag-gate"
-                                        src="{% static 'vis/images/gates/tdaggate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <img
-                                        class="cnotup-gate"
-                                        src="{% static 'vis/images/gates/cnotupgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="cnotlow-gate"
-                                        src="{% static 'vis/images/gates/cnotlowgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="blank-gate"
-                                        src="{% static 'vis/images/gates/blankgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                                <td>
-                                    <img
-                                        class="blank-gate"
-                                        src="{% static 'vis/images/gates/blankgate.svg' %}"
-                                        draggable="true"
-                                    />
-                                </td>
-                            </tr>
-                        </table>
+                    <div id="circuit-composer" style="flex-grow: 8;">
+                        <h2>Circuit Composer</h2>
+                        <div id="content">
+                            <div>
+                                <canvas id="canvas"></canvas>
+                            </div>
+                            <div id="progress">
+                                <div></div>
+                            </div>
+                        </div>
                     </div>
-                </gates>
+                    <div class="container" style="flex-direction: column;">
+                        <div id="add-gates">
+                            <h2>Add Gates</h2>
+                            <div id="toolbar"></div>
+                        </div>
+                        <div
+                            id="state-probabilities"
+                            class="container"
+                            style="flex-direction: column;"
+                        >
+                            <h2>State Probabilities</h2>
+                            <svg
+                                width="350"
+                                height="350"
+                                font-family="sans-serif"
+                                font-size="14"
+                            ></svg>
+                            <div id="state-table"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -204,26 +116,6 @@
                 </li>
                 <li style="float: right;"><a id="about" href="#">About</a></li>
             </ul>
-        </div>
-        <div style="clear: both;">
-            <div id="content" style="float: left;">
-                <div id="toolbar">
-                    <div class="std"></div>
-                    <div class="user"></div>
-                </div>
-                <div>
-                    <canvas id="canvas"></canvas>
-                </div>
-                <div id="progress">
-                    <div></div>
-                </div>
-            </div>
-            <div id="amplitudes-container">
-                <!-- <div id="hide-impossible">(show all)</div> -->
-                <div id="amplitudes-scrollbox">
-                    <table id="amplitudes"></table>
-                </div>
-            </div>
         </div>
         <div id="modal">
             <div style="text-align: left;">
@@ -318,8 +210,8 @@
                         <li>If the new size is smaller than the existing circuit, gates that don't fit will be removed.</li>
                     </ul>
                 </p> -->
-            </div>
-        </div>
+            <!-- </div> -->
+        <!-- </div> -->
         <!-- <div>
             <h1>QuVis</h1>
         </div>
