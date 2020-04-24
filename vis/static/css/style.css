@@ -48,6 +48,12 @@ svg {
     padding: 50px 20px;
 }
 
+#state-table {
+    padding: 0 50px 50px 50px;
+    align-self: center;
+    flex-grow: 1;
+}
+
 #test-square {
     position: absolute;
     height: 100px;
