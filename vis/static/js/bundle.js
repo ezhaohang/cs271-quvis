@@ -1312,6 +1312,8 @@ var examples = require("./examples");
 var data = [];
 
 var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
+  var hideBtn = document.querySelector("#hide-impossible");
+  var hide = hideBtn.innerHTML !== "(hide impossible)";
   var table = document.querySelector("#state-table");
   table.innerHTML = "";
   data = [];
@@ -1332,7 +1334,11 @@ var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
     prob += Math.pow(amplitudes.y[i], 2);
 
     if (prob < numeric.epsilon) {
-      row.style.color = "#ccc";
+      if (hide) {
+        continue;
+      } else {
+        row.style.color = "#ccc";
+      }
     }
 
     var probability = (prob * 100).toFixed(4);
@@ -1356,14 +1362,12 @@ var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
   var z = d3.scaleOrdinal().range(["#133c55"]);
   x.domain(data.map(function (d) {
     if (d) {
-      console.log(d.state);
       return d.state;
     } else {
       return "";
     }
   }));
   y.domain([0, 100]);
-  console.log(d3.stack().keys(["probability"])(data));
   g.append("g").selectAll("g").data(d3.stack().keys(["probability"])(data)).enter().append("g").attr("fill", function (d) {
     return z(d.key);
   }).selectAll("path").data(function (d) {
@@ -1408,6 +1412,15 @@ window.onload = function () {
   var canvas = document.getElementById("canvas");
   var app = new Application(canvas, 2);
   var editor = app.editor;
+  var hideBtn = document.querySelector("#hide-impossible");
+
+  hideBtn.onclick = function (evt) {
+    evt.preventDefault();
+    var hide = "(hide impossible)";
+    var show = "(show all)";
+    hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
+    document.querySelector("#evaluate").click();
+  };
 
   document.querySelector("#reset").onclick = function (evt) {
     evt.preventDefault();
@@ -1435,75 +1448,10 @@ window.onload = function () {
 
   document.body.onkeydown = function (evt) {
     // Catch hotkeys
-    if (evt.which == "S".charCodeAt(0) && evt.ctrlKey) {
-      evt.preventDefault();
-      document.querySelector("#compile").click();
-    } else if (evt.which == 13) {
+    if (evt.which == 13) {
       evt.preventDefault();
       document.querySelector("#evaluate").click();
     }
-  };
-
-  document.querySelector("#compile").onclick = function (evt) {
-    evt.preventDefault();
-    app.circuit.gates.sort(function (a, b) {
-      return a.time - b.time;
-    });
-    var size = Math.pow(2, app.circuit.nqubits);
-    var U = new numeric.T(numeric.identity(size), numeric.rep([size, size], 0));
-    app.applyCircuit(app.circuit, U, function (U) {
-      var name = prompt("Name of gate:", "F");
-
-      if (name) {
-        if (app.workspace.gates[name]) {
-          app.workspace.gates[name].matrix = U;
-          app.workspace.gates[name].circuit = app.circuit.copy();
-          app.workspace.gates[name].nqubits = app.circuit.nqubits;
-          app.workspace.gates[name].input = app.editor.input;
-        } else {
-          app.workspace.addGate({
-            name: name,
-            qubits: app.circuit.nqubits,
-            matrix: U,
-            circuit: app.circuit.copy(),
-            input: app.editor.input
-          });
-        }
-      }
-    });
-  };
-
-  document.querySelector("#exportImage").onclick = function (evt) {
-    evt.preventDefault();
-    var oldlength = editor.length;
-    var times = app.circuit.gates.map(function (gate) {
-      return gate.time;
-    });
-    editor.resize(app.circuit.nqubits, Math.max.apply(Math, times) + 1);
-    window.open(editor.draw.canvas.toDataURL("image/png"));
-    editor.resize(app.circuit.nqubits, oldlength);
-  };
-
-  document.querySelector("#exportMatrix").onclick = function (evt) {
-    evt.preventDefault();
-    app.circuit.gates.sort(function (a, b) {
-      return a.time - b.time;
-    });
-    var size = Math.pow(2, app.circuit.nqubits);
-    var U = new numeric.T(numeric.identity(size), numeric.rep([size, size], 0));
-    app.applyCircuit(app.circuit, U, function (U) {
-      var child = window.open("", "matrix.csv", ",resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes,titlebar=yes,hotkeys=yes,status=1,dependent=no");
-
-      for (var i = 0; i < U.x.length; i++) {
-        var row = [];
-
-        for (var j = 0; j < U.x[i].length; j++) {
-          row.push(U.x[i][j].toFixed(16) + "+" + U.y[i][j].toFixed(16) + "i");
-        }
-
-        child.document.write(row.join(",") + "<br>");
-      }
-    });
   };
 
   document.querySelector("#importJSON").onclick = function (evt) {
@@ -1634,6 +1582,8 @@ window.onload = function () {
     evt.preventDefault();
     evt.stopPropagation();
   };
+
+  document.getElementById("evaluate").click();
 };
 
 },{"./application":1,"./examples":5}],8:[function(require,module,exports){

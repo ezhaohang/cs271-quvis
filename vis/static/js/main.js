@@ -5,6 +5,8 @@ const examples = require("./examples");
 let data = [];
 
 const displayAmplitudes = (nqubits, amplitudes) => {
+    const hideBtn = document.querySelector("#hide-impossible");
+    const hide = hideBtn.innerHTML !== "(hide impossible)";
     const table = document.querySelector("#state-table");
     table.innerHTML = "";
     data = [];
@@ -21,7 +23,11 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         let prob = Math.pow(amplitudes.x[i], 2);
         prob += Math.pow(amplitudes.y[i], 2);
         if (prob < numeric.epsilon) {
-            row.style.color = "#ccc";
+            if (hide) {
+                continue;
+            } else {
+                row.style.color = "#ccc";
+            }
         }
         const probability = (prob * 100).toFixed(4);
         row.innerHTML = `
@@ -62,7 +68,6 @@ const displayAmplitudes = (nqubits, amplitudes) => {
     x.domain(
         data.map(function (d) {
             if (d) {
-                console.log(d.state);
                 return d.state;
             } else {
                 return "";
@@ -71,7 +76,6 @@ const displayAmplitudes = (nqubits, amplitudes) => {
     );
     y.domain([0, 100]);
 
-    console.log(d3.stack().keys(["probability"])(data));
     g.append("g")
         .selectAll("g")
         .data(d3.stack().keys(["probability"])(data))
@@ -185,6 +189,15 @@ window.onload = () => {
     const app = new Application(canvas, 2);
     const editor = app.editor;
 
+    const hideBtn = document.querySelector("#hide-impossible");
+    hideBtn.onclick = (evt) => {
+        evt.preventDefault();
+        const hide = "(hide impossible)";
+        const show = "(show all)";
+        hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
+        document.querySelector("#evaluate").click();
+    };
+
     document.querySelector("#reset").onclick = (evt) => {
         evt.preventDefault();
         const ok = confirm("Clear entire circuit?");
@@ -214,80 +227,10 @@ window.onload = () => {
 
     document.body.onkeydown = (evt) => {
         // Catch hotkeys
-        if (evt.which == "S".charCodeAt(0) && evt.ctrlKey) {
-            evt.preventDefault();
-            document.querySelector("#compile").click();
-        } else if (evt.which == 13) {
+        if (evt.which == 13) {
             evt.preventDefault();
             document.querySelector("#evaluate").click();
         }
-    };
-
-    document.querySelector("#compile").onclick = (evt) => {
-        evt.preventDefault();
-        app.circuit.gates.sort((a, b) => a.time - b.time);
-        const size = Math.pow(2, app.circuit.nqubits);
-        const U = new numeric.T(
-            numeric.identity(size),
-            numeric.rep([size, size], 0)
-        );
-        app.applyCircuit(app.circuit, U, (U) => {
-            const name = prompt("Name of gate:", "F");
-            if (name) {
-                if (app.workspace.gates[name]) {
-                    app.workspace.gates[name].matrix = U;
-                    app.workspace.gates[name].circuit = app.circuit.copy();
-                    app.workspace.gates[name].nqubits = app.circuit.nqubits;
-                    app.workspace.gates[name].input = app.editor.input;
-                } else {
-                    app.workspace.addGate({
-                        name: name,
-                        qubits: app.circuit.nqubits,
-                        matrix: U,
-                        circuit: app.circuit.copy(),
-                        input: app.editor.input,
-                    });
-                }
-            }
-        });
-    };
-
-    document.querySelector("#exportImage").onclick = (evt) => {
-        evt.preventDefault();
-        const oldlength = editor.length;
-        const times = app.circuit.gates.map((gate) => gate.time);
-        editor.resize(app.circuit.nqubits, Math.max.apply(Math, times) + 1);
-        window.open(editor.draw.canvas.toDataURL("image/png"));
-        editor.resize(app.circuit.nqubits, oldlength);
-    };
-
-    document.querySelector("#exportMatrix").onclick = (evt) => {
-        evt.preventDefault();
-        app.circuit.gates.sort((a, b) => a.time - b.time);
-        const size = Math.pow(2, app.circuit.nqubits);
-        const U = new numeric.T(
-            numeric.identity(size),
-            numeric.rep([size, size], 0)
-        );
-        app.applyCircuit(app.circuit, U, (U) => {
-            const child = window.open(
-                "",
-                "matrix.csv",
-                ",resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes,titlebar=yes,hotkeys=yes,status=1,dependent=no"
-            );
-            for (let i = 0; i < U.x.length; i++) {
-                const row = [];
-                for (let j = 0; j < U.x[i].length; j++) {
-                    row.push(
-                        U.x[i][j].toFixed(16) +
-                            "+" +
-                            U.y[i][j].toFixed(16) +
-                            "i"
-                    );
-                }
-                child.document.write(row.join(",") + "<br>");
-            }
-        });
     };
 
     document.querySelector("#importJSON").onclick = (evt) => {
@@ -406,4 +349,6 @@ window.onload = () => {
         evt.preventDefault();
         evt.stopPropagation();
     };
+
+    document.getElementById("evaluate").click();
 };
