@@ -5,13 +5,12 @@ body {
 #content {
     margin-left: 10px;
     display: flex;
-    flex-direction: column;
 }
 canvas:focus {
     outline: 0;
 }
 #toolbar {
-    margin: 26px;
+    margin: 10px 26px;
     display: flex;
     align-self: center;
     flex-wrap: wrap;

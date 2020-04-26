@@ -37,8 +37,6 @@ module.exports = class Application {
     editCircuit(gate) {
         this.circuit = gate.circuit;
         this.editor.resize(gate.circuit.nqubits, this.editor.length);
-        document.querySelector("#nqubits > span").innerHTML =
-            "Qubits: " + this.circuit.nqubits;
         if (gate.input) {
             this.editor.input = gate.input;
         }
@@ -109,8 +107,6 @@ module.exports = class Application {
         this.circuit = Circuit.load(this, json.qubits, json.circuit);
         this.editor.resize(this.circuit.nqubits, this.editor.length);
         this.editor.input = json.input;
-        document.querySelector("#nqubits > span").innerHTML =
-            "Qubits: " + this.circuit.nqubits;
         this.compileAll();
         this.editor.render();
     }

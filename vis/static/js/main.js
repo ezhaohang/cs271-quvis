@@ -207,6 +207,11 @@ window.onload = () => {
         }
     };
 
+    document.querySelector("#add-qubit").onclick = (evt) => {
+        evt.preventDefault();
+        editor.resize(app.circuit.nqubits + 1, editor.length);
+    };
+
     document.querySelector("#evaluate").onclick = (evt) => {
         evt.preventDefault();
         app.circuit.gates.sort((a, b) => a.time - b.time);
@@ -217,12 +222,17 @@ window.onload = () => {
         );
         const state = editor.input.join("");
         amplitudes.x[parseInt(state, 2)] = 1;
-        app.applyCircuit(app.circuit, amplitudes, (amplitudes) => {
-            displayAmplitudes(
-                app.circuit.nqubits,
-                amplitudes.div(amplitudes.norm2())
-            );
-        });
+        console.log(app.circuit);
+        app.applyCircuit(
+            app.circuit.copy_time(20),
+            amplitudes,
+            (amplitudes) => {
+                displayAmplitudes(
+                    app.circuit.nqubits,
+                    amplitudes.div(amplitudes.norm2())
+                );
+            }
+        );
     };
 
     document.body.onkeydown = (evt) => {
@@ -233,109 +243,49 @@ window.onload = () => {
         }
     };
 
-    document.querySelector("#importJSON").onclick = (evt) => {
-        evt.preventDefault();
-        const input = document.createElement("input");
-        input.type = "file";
-        input.onchange = (evt) => {
-            const reader = new FileReader();
-            reader.onloadend = (evt) => {
-                if (evt.target.readyState !== FileReader.DONE) {
-                    return;
-                }
-                app.loadWorkspace(JSON.parse(evt.target.result));
-            };
-            reader.readAsText(evt.target.files[0]);
-        };
-        input.click();
-    };
-
-    document.querySelector("#exportJSON").onclick = (evt) => {
-        evt.preventDefault();
-        const out = app.exportWorkspace();
-        out.version = FILE_VERSION;
-        const blob = new Blob([JSON.stringify(out)]);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "workspace.json";
-        a.click();
-    };
-
-    const resize = (size) => {
-        document.querySelector("#nqubits > span").innerHTML = "Qubits: " + size;
+    const resize = (qubit_number) => {
+        --qubit_number;
         const newGates = app.circuit.gates.filter((gate) => {
-            return gate.range[1] < size;
-        });
-        if (newGates.length < app.circuit.gates.length) {
-            const count = app.circuit.gates.length - newGates.length;
-            const ok = confirm(
-                "Resizing will remove " + count + " gates. Resize anyway?"
-            );
-            if (ok) {
-                app.circuit.gates = newGates;
-                editor.resize(size, editor.length);
+            let all_qubits = gate.controls.concat(gate.range, gate.targets);
+            if (all_qubits.indexOf(qubit_number) == 0) {
+                return false;
+            } else {
+                return true;
             }
-        } else {
-            editor.resize(size, editor.length);
-        }
+        });
+
+        newGates.map((gate) => {
+            for (let i = 0; i < gate.controls.length; i++) {
+                if (gate.controls[i] > qubit_number) {
+                    --gate.controls[i];
+                }
+            }
+            for (let i = 0; i < gate.range.length; i++) {
+                if (gate.range[i] > qubit_number) {
+                    --gate.range[i];
+                }
+            }
+            for (let i = 0; i < gate.targets.length; i++) {
+                if (gate.targets[i] > qubit_number) {
+                    --gate.targets[i];
+                }
+            }
+        });
+        app.circuit.gates = newGates;
+        editor.resize(app.circuit.nqubits - 1, editor.length);
     };
 
-    const nqubitsUl = document.querySelector("#nqubits > ul");
+    const nqubitsUl = document.querySelector("#nqubits");
     for (let i = 1; i < 11; i++) {
-        const li = document.createElement("li");
         const a = document.createElement("a");
         a.href = "#";
-        a.innerHTML = i;
+        a.innerHTML = '<img src="/static/images/delete.svg" />';
         a.onclick = (evt) => {
             evt.preventDefault();
             resize(i);
         };
-        li.appendChild(a);
-        nqubitsUl.appendChild(li);
-        if (i == 2) {
-            a.click();
-        }
+        nqubitsUl.appendChild(a);
     }
-
-    const getUrlVars = () => {
-        const vars = [];
-        const location = window.location.href;
-        const hashes = location.slice(location.indexOf("?") + 1).split("&");
-        for (let i = 0; i < hashes.length; i++) {
-            const hash = hashes[i].split("=");
-            vars.push(hash[0]);
-            vars[hash[0]] = decodeURI(hash[1]);
-        }
-        return vars;
-    };
-
-    const EXAMPLES = [
-        ["Toffoli", examples.TOFFOLI],
-        ["Bell State", examples.BELL_STATE],
-        ["2 Qubit QFT", examples.QFT2],
-        ["4 Qubit QFT", examples.QFT4],
-        ["Grover's Algorithm", examples.GROVERS_ALGORITHM],
-        ["Quantum Teleportation", examples.TELEPORTATION],
-    ];
-    const examplesEl = document.querySelector("#examples");
-    EXAMPLES.forEach((example, i) => {
-        const name = example[0];
-        const json = example[1];
-        const a = document.createElement("a");
-        a.href = "#";
-        a.appendChild(document.createTextNode(name));
-        a.onclick = (evt) => {
-            evt.preventDefault();
-            open("?example=" + example[0]);
-        };
-        if (getUrlVars().example == name) {
-            app.loadWorkspace(json);
-        }
-        const li = document.createElement("li");
-        li.appendChild(a);
-        examplesEl.appendChild(li);
-    });
 
     document.querySelector("#about").onclick = (evt) => {
         document.querySelector("#modal").style.display = "block";

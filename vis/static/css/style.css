@@ -21,7 +21,7 @@ body {
     font-weight: normal;
     position: relative;
     background: #f6fcff;
-    /* overflow-y: hidden; */
+    overflow-y: hidden;
     overflow-x: hidden;
 }
 
@@ -31,7 +31,7 @@ body {
     flex-direction: column;
     width: 100%;
     height: 100%;
-    /* overflow-y: hidden; */
+    overflow-y: hidden;
     align-items: stretch;
 }
 
@@ -69,19 +69,27 @@ h2 a {
 .container {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-#evaluate {
+.row {
+    flex-direction: row;
+}
+
+button {
     text-decoration: none;
     background-color: #84d2f6;
+    font-size: 1em;
     color: #333333;
     font-family: "Roboto Condensed", sans-serif;
     font-weight: bold;
-    font-size: 1em;
     border-radius: 5px;
     padding: 4px 8px;
-    float: right;
     height: fit-content;
+}
+
+#evaluate {
+    float: right;
     margin: 0 26px;
 }
 
@@ -92,9 +100,9 @@ svg {
 }
 
 #state-table {
-    padding: 20px 50px 50px 50px;
+    margin: 20px;
+    height: 150px;
     align-self: center;
-    flex-grow: 1;
     overflow: scroll;
 }
 

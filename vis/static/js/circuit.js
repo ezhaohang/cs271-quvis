@@ -1,8 +1,7 @@
-const Gate = require('./gate');
-const quantum = require('./quantum');
+const Gate = require("./gate");
+const quantum = require("./quantum");
 
 class Circuit {
-
     constructor(app, nqubits) {
         this.app = app;
         this.nqubits = nqubits;
@@ -21,7 +20,7 @@ class Circuit {
                 type: this.gates[i].type.name,
                 time: this.gates[i].time - 1,
                 targets: this.gates[i].targets,
-                controls: this.gates[i].controls
+                controls: this.gates[i].controls,
             });
         }
         return circuit;
@@ -34,12 +33,23 @@ class Circuit {
         const circuit = new Circuit(this.app, this.nqubits);
         for (let i = 0; i < this.gates.length; i++) {
             const gate = this.gates[i];
-            circuit.addGate(new Gate(
-                gate.type,
-                gate.time,
-                gate.targets,
-                gate.controls
-            ));
+            circuit.addGate(
+                new Gate(gate.type, gate.time, gate.targets, gate.controls)
+            );
+        }
+        return circuit;
+    }
+
+    copy_time(max_time) {
+        const circuit = new Circuit(this.app, this.nqubits);
+        for (let i = 0; i < this.gates.length; i++) {
+            const gate = this.gates[i];
+            if (gate.time > max_time) {
+                continue;
+            }
+            circuit.addGate(
+                new Gate(gate.type, gate.time, gate.targets, gate.controls)
+            );
         }
         return circuit;
     }
@@ -60,6 +70,42 @@ class Circuit {
     removeGate(gate) {
         this.gates.splice(this.gates.indexOf(gate), 1);
         this.matrix = null;
+    }
+
+    evaluate_qubit(x, progress, callback, qubit_index) {
+        const circuit = this.copy();
+        const newGates = this.gates.filter((gate) => {
+            let all_qubits = gate.controls.concat(gate.range, gate.targets);
+            if (all_qubits.indexOf(qubit_index) >= 0) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        circuit.gates = newGates;
+
+        (function applyLoop(i) {
+            progress(i / circuit.gates.length);
+            if (i < circuit.gates.length) {
+                let U;
+                const gate = circuit.gates[i];
+                if (gate.type.qubits < Infinity) {
+                    U = gate.type.matrix;
+                } else {
+                    U = gate.type.fn(gate.targets.length);
+                }
+                for (var j = 0; j < gate.controls.length; j++) {
+                    U = quantum.controlled(U);
+                }
+                var qubits = gate.controls.concat(gate.targets);
+                //x = x.dot(quantum.expandMatrix(circuit.nqubits, U, qubits));
+                x = quantum.expandMatrix(circuit.nqubits, U, qubits).dot(x);
+                setTimeout(() => applyLoop(i + 1), 1);
+            } else {
+                callback(x);
+            }
+        })(0);
     }
 
     /*
@@ -91,7 +137,6 @@ class Circuit {
             }
         })(0);
     }
-
 }
 
 module.exports = Circuit;
@@ -100,12 +145,14 @@ Circuit.load = (app, nqubits, gates) => {
     const circuit = new Circuit(app, nqubits);
     for (let i = 0; i < gates.length; i++) {
         const gate = gates[i];
-        circuit.addGate(new Gate(
-            app.workspace.gates[gate.type],
-            gate.time + 1,
-            gate.targets,
-            gate.controls
-        ));
+        circuit.addGate(
+            new Gate(
+                app.workspace.gates[gate.type],
+                gate.time + 1,
+                gate.targets,
+                gate.controls
+            )
+        );
     }
     return circuit;
 };

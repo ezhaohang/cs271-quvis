@@ -57,7 +57,6 @@ module.exports = /*#__PURE__*/function () {
     value: function editCircuit(gate) {
       this.circuit = gate.circuit;
       this.editor.resize(gate.circuit.nqubits, this.editor.length);
-      document.querySelector("#nqubits > span").innerHTML = "Qubits: " + this.circuit.nqubits;
 
       if (gate.input) {
         this.editor.input = gate.input;
@@ -138,7 +137,6 @@ module.exports = /*#__PURE__*/function () {
       this.circuit = Circuit.load(this, json.qubits, json.circuit);
       this.editor.resize(this.circuit.nqubits, this.editor.length);
       this.editor.input = json.input;
-      document.querySelector("#nqubits > span").innerHTML = "Qubits: " + this.circuit.nqubits;
       this.compileAll();
       this.editor.render();
     }
@@ -223,9 +221,9 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Gate = require('./gate');
+var Gate = require("./gate");
 
-var quantum = require('./quantum');
+var quantum = require("./quantum");
 
 var Circuit = /*#__PURE__*/function () {
   function Circuit(app, nqubits) {
@@ -274,6 +272,23 @@ var Circuit = /*#__PURE__*/function () {
 
       return circuit;
     }
+  }, {
+    key: "copy_time",
+    value: function copy_time(max_time) {
+      var circuit = new Circuit(this.app, this.nqubits);
+
+      for (var i = 0; i < this.gates.length; i++) {
+        var gate = this.gates[i];
+
+        if (gate.time > max_time) {
+          continue;
+        }
+
+        circuit.addGate(new Gate(gate.type, gate.time, gate.targets, gate.controls));
+      }
+
+      return circuit;
+    }
     /*
     Add a gate to this circuit
     (note that this destroys the current compiled matrix)
@@ -295,6 +310,49 @@ var Circuit = /*#__PURE__*/function () {
     value: function removeGate(gate) {
       this.gates.splice(this.gates.indexOf(gate), 1);
       this.matrix = null;
+    }
+  }, {
+    key: "evaluate_qubit",
+    value: function evaluate_qubit(x, progress, callback, qubit_index) {
+      var circuit = this.copy();
+      var newGates = this.gates.filter(function (gate) {
+        var all_qubits = gate.controls.concat(gate.range, gate.targets);
+
+        if (all_qubits.indexOf(qubit_index) >= 0) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+      circuit.gates = newGates;
+
+      (function applyLoop(i) {
+        progress(i / circuit.gates.length);
+
+        if (i < circuit.gates.length) {
+          var U;
+          var gate = circuit.gates[i];
+
+          if (gate.type.qubits < Infinity) {
+            U = gate.type.matrix;
+          } else {
+            U = gate.type.fn(gate.targets.length);
+          }
+
+          for (var j = 0; j < gate.controls.length; j++) {
+            U = quantum.controlled(U);
+          }
+
+          var qubits = gate.controls.concat(gate.targets); //x = x.dot(quantum.expandMatrix(circuit.nqubits, U, qubits));
+
+          x = quantum.expandMatrix(circuit.nqubits, U, qubits).dot(x);
+          setTimeout(function () {
+            return applyLoop(i + 1);
+          }, 1);
+        } else {
+          callback(x);
+        }
+      })(0);
     }
     /*
     Evaluate this circuit on "x" (a matrix or state vector) calling "progress"
@@ -1432,6 +1490,11 @@ window.onload = function () {
     }
   };
 
+  document.querySelector("#add-qubit").onclick = function (evt) {
+    evt.preventDefault();
+    editor.resize(app.circuit.nqubits + 1, editor.length);
+  };
+
   document.querySelector("#evaluate").onclick = function (evt) {
     evt.preventDefault();
     app.circuit.gates.sort(function (a, b) {
@@ -1441,7 +1504,8 @@ window.onload = function () {
     var amplitudes = new numeric.T(numeric.rep([size], 0), numeric.rep([size], 0));
     var state = editor.input.join("");
     amplitudes.x[parseInt(state, 2)] = 1;
-    app.applyCircuit(app.circuit, amplitudes, function (amplitudes) {
+    console.log(app.circuit);
+    app.applyCircuit(app.circuit.copy_time(20), amplitudes, function (amplitudes) {
       displayAmplitudes(app.circuit.nqubits, amplitudes.div(amplitudes.norm2()));
     });
   };
@@ -1454,121 +1518,58 @@ window.onload = function () {
     }
   };
 
-  document.querySelector("#importJSON").onclick = function (evt) {
-    evt.preventDefault();
-    var input = document.createElement("input");
-    input.type = "file";
-
-    input.onchange = function (evt) {
-      var reader = new FileReader();
-
-      reader.onloadend = function (evt) {
-        if (evt.target.readyState !== FileReader.DONE) {
-          return;
-        }
-
-        app.loadWorkspace(JSON.parse(evt.target.result));
-      };
-
-      reader.readAsText(evt.target.files[0]);
-    };
-
-    input.click();
-  };
-
-  document.querySelector("#exportJSON").onclick = function (evt) {
-    evt.preventDefault();
-    var out = app.exportWorkspace();
-    out.version = FILE_VERSION;
-    var blob = new Blob([JSON.stringify(out)]);
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "workspace.json";
-    a.click();
-  };
-
-  var resize = function resize(size) {
-    document.querySelector("#nqubits > span").innerHTML = "Qubits: " + size;
+  var resize = function resize(qubit_number) {
+    --qubit_number;
     var newGates = app.circuit.gates.filter(function (gate) {
-      return gate.range[1] < size;
-    });
+      var all_qubits = gate.controls.concat(gate.range, gate.targets);
 
-    if (newGates.length < app.circuit.gates.length) {
-      var count = app.circuit.gates.length - newGates.length;
-      var ok = confirm("Resizing will remove " + count + " gates. Resize anyway?");
-
-      if (ok) {
-        app.circuit.gates = newGates;
-        editor.resize(size, editor.length);
+      if (all_qubits.indexOf(qubit_number) == 0) {
+        return false;
+      } else {
+        return true;
       }
-    } else {
-      editor.resize(size, editor.length);
-    }
+    });
+    newGates.map(function (gate) {
+      for (var i = 0; i < gate.controls.length; i++) {
+        if (gate.controls[i] > qubit_number) {
+          --gate.controls[i];
+        }
+      }
+
+      for (var _i = 0; _i < gate.range.length; _i++) {
+        if (gate.range[_i] > qubit_number) {
+          --gate.range[_i];
+        }
+      }
+
+      for (var _i2 = 0; _i2 < gate.targets.length; _i2++) {
+        if (gate.targets[_i2] > qubit_number) {
+          --gate.targets[_i2];
+        }
+      }
+    });
+    app.circuit.gates = newGates;
+    editor.resize(app.circuit.nqubits - 1, editor.length);
   };
 
-  var nqubitsUl = document.querySelector("#nqubits > ul");
+  var nqubitsUl = document.querySelector("#nqubits");
 
   var _loop = function _loop(i) {
-    var li = document.createElement("li");
     var a = document.createElement("a");
     a.href = "#";
-    a.innerHTML = i;
+    a.innerHTML = '<img src="/static/images/delete.svg" />';
 
     a.onclick = function (evt) {
       evt.preventDefault();
       resize(i);
     };
 
-    li.appendChild(a);
-    nqubitsUl.appendChild(li);
-
-    if (i == 2) {
-      a.click();
-    }
+    nqubitsUl.appendChild(a);
   };
 
   for (var i = 1; i < 11; i++) {
     _loop(i);
   }
-
-  var getUrlVars = function getUrlVars() {
-    var vars = [];
-    var location = window.location.href;
-    var hashes = location.slice(location.indexOf("?") + 1).split("&");
-
-    for (var _i = 0; _i < hashes.length; _i++) {
-      var hash = hashes[_i].split("=");
-
-      vars.push(hash[0]);
-      vars[hash[0]] = decodeURI(hash[1]);
-    }
-
-    return vars;
-  };
-
-  var EXAMPLES = [["Toffoli", examples.TOFFOLI], ["Bell State", examples.BELL_STATE], ["2 Qubit QFT", examples.QFT2], ["4 Qubit QFT", examples.QFT4], ["Grover's Algorithm", examples.GROVERS_ALGORITHM], ["Quantum Teleportation", examples.TELEPORTATION]];
-  var examplesEl = document.querySelector("#examples");
-  EXAMPLES.forEach(function (example, i) {
-    var name = example[0];
-    var json = example[1];
-    var a = document.createElement("a");
-    a.href = "#";
-    a.appendChild(document.createTextNode(name));
-
-    a.onclick = function (evt) {
-      evt.preventDefault();
-      open("?example=" + example[0]);
-    };
-
-    if (getUrlVars().example == name) {
-      app.loadWorkspace(json);
-    }
-
-    var li = document.createElement("li");
-    li.appendChild(a);
-    examplesEl.appendChild(li);
-  });
 
   document.querySelector("#about").onclick = function (evt) {
     document.querySelector("#modal").style.display = "block";
