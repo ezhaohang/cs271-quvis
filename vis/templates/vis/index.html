@@ -1,45 +1,70 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>QuVis</title>
+        <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" />
+        <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="{% static 'js/libs/numeric.js' %}"></script>
+        <script src="{% static 'js/libs/processing.js' %}"></script>
+        <script src="{% static 'js/bundle.js' %}"></script>
+        <script src="{% static 'js/milan.js' %}"></script>
+        <script src="{% static 'js/libs/d3-scale-radial.js' %}"></script>
+    </head>
 
-<head>
-    <meta charset="utf-8" />
-    <title>QuVis</title>
-    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" />
-    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="{% static 'js/libs/numeric.js' %}"></script>
-    <script src="{% static 'js/libs/processing.js' %}"></script>
-    <script src="{% static 'js/bundle.js' %}"></script>
-    <script src="{% static 'js/milan.js' %}"></script>
-    <script src="{% static 'js/libs/d3-scale-radial.js' %}"></script>
-</head>
-
-<body>
-    <div id="body-container">
-        <div class="container">
+    <body>
+        <div id="body-container">
             <div id="header">
                 <h1>QuVis</h1>
                 <div style="float: right;">
-                    <h2>
-                        <a id="reset" href="#">Reset</a>
-                    </h2>
                     <h2>
                         <a id="about" href="#">About</a>
                     </h2>
                 </div>
             </div>
-            <div class="container" style="flex: 1 1 auto; flex-direction: row;">
-                <div idf="circuit-composer" style="flex-grow: 8;">
-                    <h2>Circuit Composer</h2>
-                    <div class="slidercontainer">
-                        <div id="time">time</div>
-
-                        <div class="slidecontainer">
-                            <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
-                            <p>Value: <span id="demo"></span></p>
+            <div class="container row" id="quvis-body">
+                <div id="circuit-composer" style="flex-grow: 8;">
+                    <div class="container row" id="circuit-composer-header">
+                        <div>
+                            <h2>Circuit Composer</h2>
                         </div>
+                        <button id="add-qubit" href="#" title="Add qubit">
+                            Add Qubit
+                        </button>
+                        <div style="display: inline-flex;">
+                            <img
+                                class="circle"
+                                src="/static/images/circlelb.svg"
+                            />
+                            <div id="p1">Probability state is 1</div>
+                        </div>
+
+                        <div style="display: inline-flex;">
+                            <img
+                                class="circle"
+                                src="/static/images/circledb.svg"
+                            />
+                            <div id="p0">Probability state is 0</div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="container row"
+                        style="align-items: center; margin-left: 10px;"
+                    >
+                        <p style="width: 50px; text-align: center;">time</p>
+
+                        <input
+                            type="range"
+                            min="1"
+                            max="19"
+                            value="1"
+                            class="slider"
+                            id="myRange"
+                        />
                     </div>
                     <div class="container row" id="content">
                         <div>
@@ -51,50 +76,51 @@
 
                         <div class="container" id="nqubits"></div>
                     </div>
-                    <button id="add-qubit" href="#" title="Add qubit">
-                        Add Qubit
-                    </button>
-                    <div class="probability-one-container">
-                        <img id="lb-circle" src="/static/images/circlelb.svg">
-                        <div id="p1"> Probability state is 1 </div>
-                    </div>
-
-                    <div class="probability-zero-container">
-                        <img id="db-circle" src="/static/images/circledb.svg">
-                        <div id="p0">Probability state is 0</div>
-                    </div>
                 </div>
                 <div class="container" style="flex-direction: column;">
                     <div id="add-gates">
-                        <h2>Add Gates</h2>
+                        <div class="container row center">
+                            <h2>Add Gates</h2>
+                            <button
+                                id="reset"
+                                href="#"
+                                title="Delete All Gates"
+                            >
+                                Delete All Gates
+                            </button>
+                        </div>
                         <div id="toolbar"></div>
                     </div>
                     <div id="state-probabilities" class="container">
-                        <div class="container" style="
-                                    flex-direction: row;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                ">
+                        <div class="container row center">
                             <h2>State Probabilities</h2>
-                            <button id="evaluate" href="#" title="Evaluate circuit">
+                            <button
+                                id="evaluate"
+                                href="#"
+                                title="Evaluate circuit"
+                            >
                                 Update [Enter]
                             </button>
                         </div>
                         <div id="hide-impossible">(show all)</div>
 
-                        <svg width="350" height="350" font-family="sans-serif" font-size="14"></svg>
+                        <svg
+                            width="300"
+                            height="300"
+                            font-family="sans-serif"
+                            font-size="14"
+                        ></svg>
                         <div id="state-table"></div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="modal">
-        <div style="text-align: left;">
-            <h1 style="text-align: center;">Quantum Circuit Simulator</h1>
+        <div id="modal">
+            <div style="text-align: left;">
+                <h1 style="text-align: center;">Quantum Circuit Simulator</h1>
 
-            <!-- <p>
+                <!-- <p>
                     Written by <a href="http://www.davyw.com">Davy Wybiral</a>.
                     <br>
                     Contributions by <a href="http://molehair.noip.me">Jiman Hwang</a>
@@ -184,8 +210,7 @@
                         <li>If the new size is smaller than the existing circuit, gates that don't fit will be removed.</li>
                     </ul>
                 </p> -->
+            </div>
         </div>
-    </div>
-</body>
-
+    </body>
 </html>

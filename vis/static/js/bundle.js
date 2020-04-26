@@ -273,8 +273,8 @@ var Circuit = /*#__PURE__*/function () {
       return circuit;
     }
   }, {
-    key: "copy_time",
-    value: function copy_time(max_time) {
+    key: "copy_until_time",
+    value: function copy_until_time(max_time) {
       var circuit = new Circuit(this.app, this.nqubits);
 
       for (var i = 0; i < this.gates.length; i++) {
@@ -1376,20 +1376,20 @@ var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
   table.innerHTML = "";
   data = [];
 
-  for (var i = 0; i < amplitudes.x.length; i++) {
+  for (var _i = 0; _i < amplitudes.x.length; _i++) {
     var amplitude = "";
     var state = "";
 
     for (var j = 0; j < nqubits; j++) {
-      state = ((i & 1 << j) >> j) + state;
+      state = ((_i & 1 << j) >> j) + state;
     }
 
-    amplitude += amplitudes.x[i].toFixed(8);
-    amplitude += amplitudes.y[i] < 0 ? "-" : "+";
-    amplitude += Math.abs(amplitudes.y[i]).toFixed(8) + "i";
+    amplitude += amplitudes.x[_i].toFixed(8);
+    amplitude += amplitudes.y[_i] < 0 ? "-" : "+";
+    amplitude += Math.abs(amplitudes.y[_i]).toFixed(8) + "i";
     var row = document.createElement("tr");
-    var prob = Math.pow(amplitudes.x[i], 2);
-    prob += Math.pow(amplitudes.y[i], 2);
+    var prob = Math.pow(amplitudes.x[_i], 2);
+    prob += Math.pow(amplitudes.y[_i], 2);
 
     if (prob < numeric.epsilon) {
       if (hide) {
@@ -1470,6 +1470,29 @@ window.onload = function () {
   var canvas = document.getElementById("canvas");
   var app = new Application(canvas, 2);
   var editor = app.editor;
+  var nqubitsUl = document.querySelector("#nqubits");
+
+  var _loop = function _loop(_i2) {
+    var a = document.createElement("a");
+    a.href = "#";
+    a.innerHTML = '<img src="/static/images/delete.svg" />';
+
+    a.onclick = function (evt) {
+      evt.preventDefault();
+
+      if (resize(_i2)) {
+        nqubitsUl.removeChild(nqubitsUl.lastChild);
+      }
+    };
+
+    a.className = "delete-icon container";
+    nqubitsUl.appendChild(a);
+  };
+
+  for (var _i2 = 1; _i2 < 3; _i2++) {
+    _loop(_i2);
+  }
+
   var hideBtn = document.querySelector("#hide-impossible");
 
   hideBtn.onclick = function (evt) {
@@ -1493,9 +1516,25 @@ window.onload = function () {
   document.querySelector("#add-qubit").onclick = function (evt) {
     evt.preventDefault();
     editor.resize(app.circuit.nqubits + 1, editor.length);
+    var nqubitsUl = document.querySelector("#nqubits");
+    var a = document.createElement("a");
+    a.href = "#";
+    a.innerHTML = '<img src="/static/images/delete.svg" />';
+
+    a.onclick = function (evt) {
+      evt.preventDefault();
+
+      if (resize(i)) {
+        nqubitsUl.removeChild(nqubitsUl.lastChild);
+      }
+    };
+
+    a.className = "delete-icon container";
+    nqubitsUl.appendChild(a);
   };
 
   document.querySelector("#evaluate").onclick = function (evt) {
+    var slider = document.getElementById("myRange");
     evt.preventDefault();
     app.circuit.gates.sort(function (a, b) {
       return a.time - b.time;
@@ -1505,7 +1544,7 @@ window.onload = function () {
     var state = editor.input.join("");
     amplitudes.x[parseInt(state, 2)] = 1;
     console.log(app.circuit);
-    app.applyCircuit(app.circuit.copy_time(20), amplitudes, function (amplitudes) {
+    app.applyCircuit(app.circuit.copy_until_time(slider.value), amplitudes, function (amplitudes) {
       displayAmplitudes(app.circuit.nqubits, amplitudes.div(amplitudes.norm2()));
     });
   };
@@ -1519,6 +1558,10 @@ window.onload = function () {
   };
 
   var resize = function resize(qubit_number) {
+    if (app.circuit.nqubits == 0 || app.circuit.nqubits < qubit_number) {
+      return 0;
+    }
+
     --qubit_number;
     var newGates = app.circuit.gates.filter(function (gate) {
       var all_qubits = gate.controls.concat(gate.range, gate.targets);
@@ -1530,46 +1573,28 @@ window.onload = function () {
       }
     });
     newGates.map(function (gate) {
-      for (var i = 0; i < gate.controls.length; i++) {
-        if (gate.controls[i] > qubit_number) {
-          --gate.controls[i];
+      for (var _i3 = 0; _i3 < gate.controls.length; _i3++) {
+        if (gate.controls[_i3] > qubit_number) {
+          --gate.controls[_i3];
         }
       }
 
-      for (var _i = 0; _i < gate.range.length; _i++) {
-        if (gate.range[_i] > qubit_number) {
-          --gate.range[_i];
+      for (var _i4 = 0; _i4 < gate.range.length; _i4++) {
+        if (gate.range[_i4] > qubit_number) {
+          --gate.range[_i4];
         }
       }
 
-      for (var _i2 = 0; _i2 < gate.targets.length; _i2++) {
-        if (gate.targets[_i2] > qubit_number) {
-          --gate.targets[_i2];
+      for (var _i5 = 0; _i5 < gate.targets.length; _i5++) {
+        if (gate.targets[_i5] > qubit_number) {
+          --gate.targets[_i5];
         }
       }
     });
     app.circuit.gates = newGates;
     editor.resize(app.circuit.nqubits - 1, editor.length);
+    return 1;
   };
-
-  var nqubitsUl = document.querySelector("#nqubits");
-
-  var _loop = function _loop(i) {
-    var a = document.createElement("a");
-    a.href = "#";
-    a.innerHTML = '<img src="/static/images/delete.svg" />';
-
-    a.onclick = function (evt) {
-      evt.preventDefault();
-      resize(i);
-    };
-
-    nqubitsUl.appendChild(a);
-  };
-
-  for (var i = 1; i < 11; i++) {
-    _loop(i);
-  }
 
   document.querySelector("#about").onclick = function (evt) {
     document.querySelector("#modal").style.display = "block";

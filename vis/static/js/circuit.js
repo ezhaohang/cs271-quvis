@@ -40,7 +40,7 @@ class Circuit {
         return circuit;
     }
 
-    copy_time(max_time) {
+    copy_until_time(max_time) {
         const circuit = new Circuit(this.app, this.nqubits);
         for (let i = 0; i < this.gates.length; i++) {
             const gate = this.gates[i];

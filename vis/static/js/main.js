@@ -37,27 +37,27 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         table.appendChild(row);
         data.push({
             state: state,
-            probability: probability
+            probability: probability,
         });
     }
 
     d3.select("svg").selectAll("*").remove();
     var svg = d3
-        .select("svg")
-        .attr("width", 350)
-        .attr("height", 350)
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 14),
+            .select("svg")
+            .attr("width", 350)
+            .attr("height", 350)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 14),
         width = +svg.attr("width"),
         height = +svg.attr("height"),
         innerRadius = 0,
         outerRadius = Math.min(width, height) / 2,
         g = svg
-        .append("g")
-        .attr(
-            "transform",
-            "translate(" + width / 2 + "," + height / 2 + ")"
-        );
+            .append("g")
+            .attr(
+                "transform",
+                "translate(" + width / 2 + "," + height / 2 + ")"
+            );
 
     var x = d3
         .scaleBand()
@@ -96,21 +96,21 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         .attr(
             "d",
             d3
-            .arc()
-            .innerRadius(function (d) {
-                return y(d[0]);
-            })
-            .outerRadius(function (d) {
-                return y(d[1]);
-            })
-            .startAngle(function (d) {
-                return x(d.data.state);
-            })
-            .endAngle(function (d) {
-                return x(d.data.state) + x.bandwidth();
-            })
-            .padAngle(0.01)
-            .padRadius(innerRadius)
+                .arc()
+                .innerRadius(function (d) {
+                    return y(d[0]);
+                })
+                .outerRadius(function (d) {
+                    return y(d[1]);
+                })
+                .startAngle(function (d) {
+                    return x(d.data.state);
+                })
+                .endAngle(function (d) {
+                    return x(d.data.state) + x.bandwidth();
+                })
+                .padAngle(0.01)
+                .padRadius(innerRadius)
         );
 
     var label = g
@@ -137,9 +137,9 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         .attr("transform", function (d) {
             return (x(d.state) + x.bandwidth() / 2 + Math.PI / 2) %
                 (2 * Math.PI) <
-                Math.PI ?
-                "rotate(90)translate(0,16)" :
-                "rotate(-90)translate(0,-9)";
+                Math.PI
+                ? "rotate(90)translate(0,16)"
+                : "rotate(-90)translate(0,-9)";
         })
         .text(function (d) {
             return d.state;
@@ -192,6 +192,21 @@ window.onload = () => {
     const app = new Application(canvas, 2);
     const editor = app.editor;
 
+    const nqubitsUl = document.querySelector("#nqubits");
+    for (let i = 1; i < 3; i++) {
+        const a = document.createElement("a");
+        a.href = "#";
+        a.innerHTML = '<img src="/static/images/delete.svg" />';
+        a.onclick = (evt) => {
+            evt.preventDefault();
+            if (resize(i)) {
+                nqubitsUl.removeChild(nqubitsUl.lastChild);
+            }
+        };
+        a.className = "delete-icon container";
+        nqubitsUl.appendChild(a);
+    }
+
     const hideBtn = document.querySelector("#hide-impossible");
     hideBtn.onclick = (evt) => {
         evt.preventDefault();
@@ -210,20 +225,26 @@ window.onload = () => {
         }
     };
 
-    var slider = document.getElementById("myRange");
-    var output = document.getElementById("demo");
-    output.innerHTML = slider.value;
-
-    slider.oninput = function () {
-        output.innerHTML = this.value;
-    }
-
     document.querySelector("#add-qubit").onclick = (evt) => {
         evt.preventDefault();
         editor.resize(app.circuit.nqubits + 1, editor.length);
+        const nqubitsUl = document.querySelector("#nqubits");
+        const a = document.createElement("a");
+        a.href = "#";
+        a.innerHTML = '<img src="/static/images/delete.svg" />';
+        a.onclick = (evt) => {
+            evt.preventDefault();
+            if (resize(i)) {
+                nqubitsUl.removeChild(nqubitsUl.lastChild);
+            }
+        };
+        a.className = "delete-icon container";
+        nqubitsUl.appendChild(a);
     };
 
     document.querySelector("#evaluate").onclick = (evt) => {
+        var slider = document.getElementById("myRange");
+
         evt.preventDefault();
         app.circuit.gates.sort((a, b) => a.time - b.time);
         const size = Math.pow(2, app.circuit.nqubits);
@@ -235,7 +256,7 @@ window.onload = () => {
         amplitudes.x[parseInt(state, 2)] = 1;
         console.log(app.circuit);
         app.applyCircuit(
-            app.circuit.copy_time(20),
+            app.circuit.copy_until_time(slider.value),
             amplitudes,
             (amplitudes) => {
                 displayAmplitudes(
@@ -255,6 +276,9 @@ window.onload = () => {
     };
 
     const resize = (qubit_number) => {
+        if (app.circuit.nqubits == 0 || app.circuit.nqubits < qubit_number) {
+            return 0;
+        }
         --qubit_number;
         const newGates = app.circuit.gates.filter((gate) => {
             let all_qubits = gate.controls.concat(gate.range, gate.targets);
@@ -284,19 +308,8 @@ window.onload = () => {
         });
         app.circuit.gates = newGates;
         editor.resize(app.circuit.nqubits - 1, editor.length);
+        return 1;
     };
-
-    const nqubitsUl = document.querySelector("#nqubits");
-    for (let i = 1; i < 11; i++) {
-        const a = document.createElement("a");
-        a.href = "#";
-        a.innerHTML = '<img src="/static/images/delete.svg" />';
-        a.onclick = (evt) => {
-            evt.preventDefault();
-            resize(i);
-        };
-        nqubitsUl.appendChild(a);
-    }
 
     document.querySelector("#about").onclick = (evt) => {
         document.querySelector("#modal").style.display = "block";
