@@ -35,26 +35,29 @@ const displayAmplitudes = (nqubits, amplitudes) => {
             <td style="text-indent: 20px">${probability}</td>
         `;
         table.appendChild(row);
-        data.push({ state: state, probability: probability });
+        data.push({
+            state: state,
+            probability: probability
+        });
     }
 
     d3.select("svg").selectAll("*").remove();
     var svg = d3
-            .select("svg")
-            .attr("width", 350)
-            .attr("height", 350)
-            .attr("font-family", "sans-serif")
-            .attr("font-size", 14),
+        .select("svg")
+        .attr("width", 350)
+        .attr("height", 350)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 14),
         width = +svg.attr("width"),
         height = +svg.attr("height"),
         innerRadius = 0,
         outerRadius = Math.min(width, height) / 2,
         g = svg
-            .append("g")
-            .attr(
-                "transform",
-                "translate(" + width / 2 + "," + height / 2 + ")"
-            );
+        .append("g")
+        .attr(
+            "transform",
+            "translate(" + width / 2 + "," + height / 2 + ")"
+        );
 
     var x = d3
         .scaleBand()
@@ -93,21 +96,21 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         .attr(
             "d",
             d3
-                .arc()
-                .innerRadius(function (d) {
-                    return y(d[0]);
-                })
-                .outerRadius(function (d) {
-                    return y(d[1]);
-                })
-                .startAngle(function (d) {
-                    return x(d.data.state);
-                })
-                .endAngle(function (d) {
-                    return x(d.data.state) + x.bandwidth();
-                })
-                .padAngle(0.01)
-                .padRadius(innerRadius)
+            .arc()
+            .innerRadius(function (d) {
+                return y(d[0]);
+            })
+            .outerRadius(function (d) {
+                return y(d[1]);
+            })
+            .startAngle(function (d) {
+                return x(d.data.state);
+            })
+            .endAngle(function (d) {
+                return x(d.data.state) + x.bandwidth();
+            })
+            .padAngle(0.01)
+            .padRadius(innerRadius)
         );
 
     var label = g
@@ -134,9 +137,9 @@ const displayAmplitudes = (nqubits, amplitudes) => {
         .attr("transform", function (d) {
             return (x(d.state) + x.bandwidth() / 2 + Math.PI / 2) %
                 (2 * Math.PI) <
-                Math.PI
-                ? "rotate(90)translate(0,16)"
-                : "rotate(-90)translate(0,-9)";
+                Math.PI ?
+                "rotate(90)translate(0,16)" :
+                "rotate(-90)translate(0,-9)";
         })
         .text(function (d) {
             return d.state;
@@ -206,6 +209,14 @@ window.onload = () => {
             editor.render();
         }
     };
+
+    var slider = document.getElementById("myRange");
+    var output = document.getElementById("demo");
+    output.innerHTML = slider.value;
+
+    slider.oninput = function () {
+        output.innerHTML = this.value;
+    }
 
     document.querySelector("#add-qubit").onclick = (evt) => {
         evt.preventDefault();

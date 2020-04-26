@@ -16,6 +16,7 @@ body {
     margin: 0;
     padding: 0;
 }
+
 body {
     font-family: "Roboto Condensed", sans-serif;
     font-weight: normal;
@@ -86,6 +87,84 @@ button {
     border-radius: 5px;
     padding: 4px 8px;
     height: fit-content;
+}
+
+#add-qubit {
+    position: absolute;
+    width: 200px;
+    height: 38.57px;
+    left: 250px;
+    top: 75px;
+}
+
+
+#p1 {
+    position: absolute;
+    width: 165px;
+    height: 20px;
+    left: 699px;
+    top: 93px;
+}
+
+#p0 {
+    position: absolute;
+    width: 165px;
+    height: 20px;
+    left: 876px;
+    top: 93px;
+}
+
+#lb-circle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 666px;
+    top: 93px;
+
+}
+
+#db-circle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 845px;
+    top: 93px;
+
+}
+
+.slidecontainer {
+    width: 100%;
+}
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 25px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider:hover {
+    opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    background: #4CAF50;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    background: #4CAF50;
+    cursor: pointer;
 }
 
 #evaluate {
