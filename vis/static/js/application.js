@@ -153,7 +153,7 @@ module.exports = class Application {
             },
             (x) => {
                 wrapper.style.display = "none";
-                callback(x);
+                return callback(x);
             }
         );
     }

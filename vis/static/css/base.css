@@ -10,11 +10,11 @@ canvas:focus {
     outline: 0;
 }
 #toolbar {
-    margin: 10px 26px;
+    margin: 5px 26px;
     display: flex;
     align-self: center;
     flex-wrap: wrap;
-    width: 350px;
+    width: 400px;
 }
 #toolbar div.gate {
     position: relative;
@@ -47,12 +47,7 @@ canvas:focus {
     max-height: 480px;
     overflow-y: scroll;
 }
-#hide-impossible {
-    color: #ccc;
-    text-align: center;
-    margin-bottom: 20px;
-    cursor: pointer;
-}
+
 #controls {
     margin-top: 10px;
 }
@@ -162,4 +157,9 @@ ul.drop li:hover > ul {
     background-color: #fff;
     z-index: 901;
     padding: 20px;
+}
+
+#about-text {
+    padding: 0 26px;
+    font-size: 1.5em;
 }

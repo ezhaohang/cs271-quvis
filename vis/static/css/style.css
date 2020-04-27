@@ -84,11 +84,18 @@ h2 a {
 #circuit-composer-header {
     justify-content: space-between;
     align-items: center;
-    width: 1000px;
+    width: 1110px;
 }
 
 .circle {
     margin-right: 5px;
+}
+
+.qubit-tag {
+    height: 50px;
+    width: 50px;
+    margin: 0 10px 0 15px;
+    justify-content: center;
 }
 
 button {
@@ -107,6 +114,7 @@ button {
 .delete-icon {
     height: 50px;
     width: 50px;
+    margin: 0 10px;
     justify-content: center;
 }
 
@@ -121,6 +129,7 @@ button {
     opacity: 0.7;
     -webkit-transition: 0.2s;
     transition: opacity 0.2s;
+    margin-left: 50px;
 }
 
 .slider:hover {
@@ -150,11 +159,10 @@ button {
 svg {
     align-self: center;
     overflow: visible;
-    padding: 30px 50px;
+    padding: 50px;
 }
 
 #state-table {
-    margin: 20px;
     max-height: 100px;
     align-self: center;
     overflow: scroll;

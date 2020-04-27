@@ -1,5 +1,6 @@
 const Draw = require("./draw");
 const Gate = require("./gate");
+const main = require("./main");
 
 module.exports = class Editor {
     constructor(app, canvas) {
@@ -54,12 +55,7 @@ module.exports = class Editor {
                 Math.floor(evt2.offsetY / 50)
             );
             const type = editor.activeGate;
-            if (time == 0) {
-                // Toggle inputs
-                for (let i = 0; i < qubits.length; i++) {
-                    editor.input[qubits[i]] = 1 - editor.input[qubits[i]];
-                }
-            } else if (type.name == "control") {
+            if (type.name == "control") {
                 // Add control to a gate (if possible)
                 let collisionA = false;
                 let collisionB = false;
@@ -175,6 +171,10 @@ module.exports = class Editor {
     createGate(type, time, qubits) {
         const circuit = this.app.circuit;
         let collision = false;
+
+        if ([1, 4, 7, 10, 13, 16, 19].indexOf(time) < 0) {
+            collision = true;
+        }
         // Find collision (can't add a gate where one already exists)
         for (let i = 0; i < qubits.length; i++) {
             for (let j = 0; j < circuit.gates.length; j++) {
@@ -235,8 +235,16 @@ module.exports = class Editor {
     */
     render() {
         this.draw.clear();
+        for (let i = 0; i < this.app.circuit.nqubits; i++) {
+            for (let j = 1; j < 20; j += 3) {
+                this.draw.empty_gate(j * 50, i * 50);
+            }
+        }
+
         for (let i = 0; i < this.app.circuit.gates.length; i++) {
-            this.app.circuit.gates[i].render(this.draw);
+            main.calculate_gate_prob(this.app.circuit.gates[i]);
+            const p = this.app.circuit.gates[i].probability;
+            this.app.circuit.gates[i].render(this.draw, p);
         }
         for (let i = 0; i < this.app.circuit.nqubits; i++) {
             this.draw.qubit(20, 20 + i * 50, 1, this.input[i]);

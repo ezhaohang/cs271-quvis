@@ -1,12 +1,13 @@
 const FILE_VERSION = 1;
-
+const Gate = require("./gate");
 const Application = require("./application");
 const examples = require("./examples");
 let data = [];
+const main = module.exports;
 
 const displayAmplitudes = (nqubits, amplitudes) => {
     const hideBtn = document.querySelector("#hide-impossible");
-    const hide = hideBtn.innerHTML !== "(hide impossible)";
+    const hide = hideBtn.innerHTML !== "Hide Impossible States";
     const table = document.querySelector("#state-table");
     table.innerHTML = "";
     data = [];
@@ -193,6 +194,7 @@ window.onload = () => {
     const editor = app.editor;
 
     const nqubitsUl = document.querySelector("#nqubits");
+    const qubit_number = document.querySelector("#qubit-number");
     for (let i = 1; i < 3; i++) {
         const a = document.createElement("a");
         a.href = "#";
@@ -201,17 +203,22 @@ window.onload = () => {
             evt.preventDefault();
             if (resize(i)) {
                 nqubitsUl.removeChild(nqubitsUl.lastChild);
+                qubit_number.removeChild(qubit_number.lastChild);
             }
         };
         a.className = "delete-icon container";
         nqubitsUl.appendChild(a);
+        const div = document.createElement("div");
+        div.innerHTML = "<p>qubit " + i + "</p>";
+        div.className = "qubit-tag container";
+        qubit_number.appendChild(div);
     }
 
     const hideBtn = document.querySelector("#hide-impossible");
     hideBtn.onclick = (evt) => {
         evt.preventDefault();
-        const hide = "(hide impossible)";
-        const show = "(show all)";
+        const hide = "Hide Impossible States";
+        const show = "Show All States";
         hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
         document.querySelector("#evaluate").click();
     };
@@ -227,19 +234,37 @@ window.onload = () => {
 
     document.querySelector("#add-qubit").onclick = (evt) => {
         evt.preventDefault();
+        const last_qubit = app.circuit.nqubits + 1;
         editor.resize(app.circuit.nqubits + 1, editor.length);
         const nqubitsUl = document.querySelector("#nqubits");
+        const qubit_number = document.querySelector("#qubit-number");
         const a = document.createElement("a");
         a.href = "#";
         a.innerHTML = '<img src="/static/images/delete.svg" />';
         a.onclick = (evt) => {
             evt.preventDefault();
-            if (resize(i)) {
+            if (resize(last_qubit)) {
                 nqubitsUl.removeChild(nqubitsUl.lastChild);
+                qubit_number.removeChild(qubit_number.lastChild);
             }
         };
         a.className = "delete-icon container";
         nqubitsUl.appendChild(a);
+
+        const div = document.createElement("div");
+        div.innerHTML = "<p>qubit " + app.circuit.nqubits + "</p>";
+        div.className = "qubit-tag container";
+        qubit_number.appendChild(div);
+    };
+
+    document.querySelector("#myRange").onchange = (evt) => {
+        evt.preventDefault();
+        var slider = document.getElementById("myRange");
+        const cur_time = Math.ceil(slider.value / 3);
+        document.querySelector("#time").innerHTML = "time " + cur_time;
+        document.querySelector("#state-header").innerHTML =
+            "State Probabilities at Time " + cur_time;
+        document.querySelector("#evaluate").click();
     };
 
     document.querySelector("#evaluate").onclick = (evt) => {
@@ -254,7 +279,6 @@ window.onload = () => {
         );
         const state = editor.input.join("");
         amplitudes.x[parseInt(state, 2)] = 1;
-        console.log(app.circuit);
         app.applyCircuit(
             app.circuit.copy_until_time(slider.value),
             amplitudes,
@@ -324,5 +348,65 @@ window.onload = () => {
         evt.stopPropagation();
     };
 
+    document.querySelector("#canvas").onmouseleave = (evt) => {
+        evt.preventDefault();
+        document.querySelector("#evaluate").click();
+        console.log("leave");
+    };
+
     document.getElementById("evaluate").click();
+    main.calculate_gate_prob = (input_gate) => {
+        const new_circuit = app.circuit.copy();
+        const new_gates = new_circuit.gates.filter((gate) => {
+            let all_qubits = gate.controls.concat(gate.range, gate.targets);
+            if (all_qubits.indexOf(input_gate.targets[0]) >= 0) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+        const mapped_gates = [];
+        for (let i = 0; i < new_gates.length; i++) {
+            let new_targets = [];
+            var num_targets = new_gates[i].targets.length;
+            for (let i = 0; i < num_targets; i++) {
+                new_targets.push(0);
+            }
+            let new_controls = [];
+            var num_controls = new_gates[i].controls.length;
+
+            for (let i = 0; i < num_controls; i++) {
+                new_controls.push(0);
+            }
+            mapped_gates.push(
+                new Gate(
+                    new_gates[i].type,
+                    new_gates[i].time,
+                    new_targets,
+                    new_controls
+                )
+            );
+        }
+        new_circuit.gates = mapped_gates;
+        new_circuit.nqubits = 1;
+        new_circuit.gates.sort((a, b) => a.time - b.time);
+        const size = Math.pow(2, new_circuit.nqubits);
+        const amplitudes = new numeric.T(
+            numeric.rep([size], 0),
+            numeric.rep([size], 0)
+        );
+        const state = new_circuit.app.editor.input.join("");
+        amplitudes.x[parseInt(state, 2)] = 1;
+
+        app.applyCircuit(
+            new_circuit.copy_until_time(input_gate.time),
+            amplitudes,
+            (amplitudes) => {
+                amplitudes = amplitudes.div(amplitudes.norm2());
+                let prob = Math.pow(amplitudes.x[0], 2);
+                prob += Math.pow(amplitudes.y[0], 2);
+                input_gate.probability = prob * 100;
+            }
+        );
+    };
 };

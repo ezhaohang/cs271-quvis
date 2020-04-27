@@ -3,7 +3,7 @@ const quantum = module.exports;
 /*
 Return version of U controlled by first qubit.
 */
-quantum.controlled = U => {
+quantum.controlled = (U) => {
     const m = U.x.length;
     const Mx = numeric.identity(m * 2);
     const My = numeric.rep([m * 2, m * 2], 0);
@@ -26,7 +26,7 @@ quantum.expandMatrix = (nqubits, U, qubits) => {
     const n = Math.pow(2, nqubits);
     qubits = qubits.slice(0);
     for (let i = 0; i < qubits.length; i++) {
-        qubits[i] = (nqubits - 1) - qubits[i];
+        qubits[i] = nqubits - 1 - qubits[i];
     }
     qubits.reverse();
     for (let i = 0; i < nqubits; i++) {
@@ -66,35 +66,62 @@ quantum.expandMatrix = (nqubits, U, qubits) => {
 };
 
 quantum.h = new numeric.T(
-    numeric.div([[1, 1], [1, -1]], Math.sqrt(2)),
+    numeric.div(
+        [
+            [1, 1],
+            [1, -1],
+        ],
+        Math.sqrt(2)
+    ),
     numeric.rep([2, 2], 0)
 );
 
 quantum.x = new numeric.T(
-    [[0, 1], [1, 0]],
+    [
+        [0, 1],
+        [1, 0],
+    ],
     numeric.rep([2, 2], 0)
 );
 
-quantum.y = new numeric.T(
-    numeric.rep([2, 2], 0),
-    [[0, -1], [1, 0]]
-);
+quantum.y = new numeric.T(numeric.rep([2, 2], 0), [
+    [0, -1],
+    [1, 0],
+]);
 
 quantum.z = new numeric.T(
-    [[1, 0], [0, -1]],
+    [
+        [1, 0],
+        [0, -1],
+    ],
     numeric.rep([2, 2], 0)
 );
 
 quantum.s = new numeric.T(
-    [[1, 0], [0, 0]],
-    [[0, 0], [0, 1]]
+    [
+        [1, 0],
+        [0, 0],
+    ],
+    [
+        [0, 0],
+        [0, 1],
+    ]
 );
 
-const makeR = theta => {
+const makeR = (theta) => {
     const x = Math.cos(theta);
     const y = Math.sin(theta);
-    return new numeric.T([[1, 0], [0, x]], [[0, 0], [0, y]]);
-}
+    return new numeric.T(
+        [
+            [1, 0],
+            [0, x],
+        ],
+        [
+            [0, 0],
+            [0, y],
+        ]
+    );
+};
 
 quantum.r2 = makeR(Math.PI / 2);
 quantum.r4 = makeR(Math.PI / 4);
@@ -105,7 +132,7 @@ quantum.swap = new numeric.T(
         [1, 0, 0, 0],
         [0, 0, 1, 0],
         [0, 1, 0, 0],
-        [0, 0, 0, 1]
+        [0, 0, 0, 1],
     ],
     numeric.rep([4, 4], 0)
 );
@@ -129,6 +156,12 @@ quantum.qft = (nqubits) => {
 };
 
 quantum.srn = new numeric.T(
-    numeric.div([[1, -1], [1, 1]], Math.sqrt(2)),
+    numeric.div(
+        [
+            [1, -1],
+            [1, 1],
+        ],
+        Math.sqrt(2)
+    ),
     numeric.rep([2, 2], 0)
 );

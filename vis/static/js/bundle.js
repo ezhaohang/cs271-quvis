@@ -190,7 +190,7 @@ module.exports = /*#__PURE__*/function () {
         progress.style.width = wrapper.clientWidth * percent;
       }, function (x) {
         wrapper.style.display = "none";
-        callback(x);
+        return callback(x);
       });
     }
   }]);
@@ -466,15 +466,33 @@ module.exports = /*#__PURE__*/function () {
       this.gfx.stroke(0);
     }
   }, {
+    key: "bar",
+    value: function bar(x, y, p) {
+      var width1 = p;
+      var width2 = 100 - p;
+      this.gfx.fill(56, 111, 164);
+      this.gfx.rect(x, y, width1, 15);
+      this.gfx.fill(132, 210, 246);
+      this.gfx.rect(x + width1, y, width2, 15);
+    }
+  }, {
+    key: "empty_gate",
+    value: function empty_gate(x, y) {
+      this.gfx.stroke(19, 60, 85);
+      this.gfx.strokeWeight(2);
+      this.gfx.fill(225, 236, 239);
+      this.gfx.rect(x + 2, y + 2, 46, 46, 5);
+    }
+  }, {
     key: "qubit",
     value: function qubit(x, y, h, state) {
       this.gfx.textSize(17);
       this.gfx.noStroke();
-      this.gfx.fill(255);
-      this.gfx.rect(x - 20, y - 17, 50, h * 50 - 6);
+      this.gfx.fill(246, 252, 255);
+      this.gfx.rect(x - 20, y - 10, 50, h * 50 - 6);
       this.gfx.fill(0);
       this.gfx.text(state ? "|1>" : "|0>", x, y + h / 2 * 50 - 15);
-      this.gfx.fill(255);
+      this.gfx.fill(246, 252, 255);
       this.gfx.stroke();
       this.gfx.textSize(11);
     }
@@ -504,6 +522,7 @@ module.exports = /*#__PURE__*/function () {
       this.gfx.stroke(246, 252, 255);
       this.gfx.line(x - 6, y + 5, x + 14, y + 5);
       this.gfx.line(x + 5, y - 6, x + 5, y + 14);
+      this.gfx.stroke(19, 60, 85);
     }
   }, {
     key: "wire",
@@ -533,6 +552,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var Draw = require("./draw");
 
 var Gate = require("./gate");
+
+var main = require("./main");
 
 module.exports = /*#__PURE__*/function () {
   function Editor(app, canvas) {
@@ -594,12 +615,7 @@ module.exports = /*#__PURE__*/function () {
         var qubits = editor.getSelection(qubit, Math.floor(evt2.offsetY / 50));
         var type = editor.activeGate;
 
-        if (time == 0) {
-          // Toggle inputs
-          for (var i = 0; i < qubits.length; i++) {
-            editor.input[qubits[i]] = 1 - editor.input[qubits[i]];
-          }
-        } else if (type.name == "control") {
+        if (type.name == "control") {
           // Add control to a gate (if possible)
           var collisionA = false;
           var collisionB = false;
@@ -621,8 +637,8 @@ module.exports = /*#__PURE__*/function () {
         } else {
           // Otherwise we're creating a new gate
           if (type.qubits == 1 && qubits.length > 1) {
-            for (var _i = 0; _i < qubits.length; _i++) {
-              editor.createGate(type, time, [qubits[_i]]);
+            for (var i = 0; i < qubits.length; i++) {
+              editor.createGate(type, time, [qubits[i]]);
             }
           } else if (type.qubits == qubits.length || type.qubits == Infinity || type.name == "cnot" || type.name == "swap") {
             editor.createGate(type, time, qubits);
@@ -724,7 +740,12 @@ module.exports = /*#__PURE__*/function () {
     key: "createGate",
     value: function createGate(type, time, qubits) {
       var circuit = this.app.circuit;
-      var collision = false; // Find collision (can't add a gate where one already exists)
+      var collision = false;
+
+      if ([1, 4, 7, 10, 13, 16, 19].indexOf(time) < 0) {
+        collision = true;
+      } // Find collision (can't add a gate where one already exists)
+
 
       for (var i = 0; i < qubits.length; i++) {
         for (var j = 0; j < circuit.gates.length; j++) {
@@ -771,8 +792,8 @@ module.exports = /*#__PURE__*/function () {
           qubits.push(i);
         }
       } else {
-        for (var _i2 = y1; _i2 < y1 + h; _i2++) {
-          qubits.push(_i2);
+        for (var _i = y1; _i < y1 + h; _i++) {
+          qubits.push(_i);
         }
       }
 
@@ -787,8 +808,17 @@ module.exports = /*#__PURE__*/function () {
     value: function render() {
       this.draw.clear();
 
-      for (var i = 0; i < this.app.circuit.gates.length; i++) {
-        this.app.circuit.gates[i].render(this.draw);
+      for (var i = 0; i < this.app.circuit.nqubits; i++) {
+        for (var j = 1; j < 20; j += 3) {
+          this.draw.empty_gate(j * 50, i * 50);
+        }
+      }
+
+      for (var _i2 = 0; _i2 < this.app.circuit.gates.length; _i2++) {
+        main.calculate_gate_prob(this.app.circuit.gates[_i2]);
+        var p = this.app.circuit.gates[_i2].probability;
+
+        this.app.circuit.gates[_i2].render(this.draw, p);
       }
 
       for (var _i3 = 0; _i3 < this.app.circuit.nqubits; _i3++) {
@@ -800,7 +830,7 @@ module.exports = /*#__PURE__*/function () {
   return Editor;
 }();
 
-},{"./draw":3,"./gate":6}],5:[function(require,module,exports){
+},{"./draw":3,"./gate":6,"./main":7}],5:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -1300,6 +1330,7 @@ module.exports = /*#__PURE__*/function () {
     this.time = time;
     this.targets = targets;
     this.controls = controls || [];
+    this.probability = 100;
     var qubits = this.targets.concat(this.controls);
     this.range = [Math.min.apply(Math, qubits), Math.max.apply(Math, qubits)];
   }
@@ -1331,14 +1362,14 @@ module.exports = /*#__PURE__*/function () {
     }
   }, {
     key: "render",
-    value: function render(draw) {
+    value: function render(draw, p) {
       var x = this.time * 50 + 20;
       var y1 = this.targets[0] * 50 + 20;
 
       for (var i = 0; i < this.controls.length; i++) {
         var y2 = this.controls[i] * 50 + 20;
         draw.control(x, y2);
-        draw.wire(x, y1, y2);
+        draw.wire(x + 5, y1, y2);
       }
 
       if (this.type.name == "x" && this.controls.length > 0) {
@@ -1347,11 +1378,13 @@ module.exports = /*#__PURE__*/function () {
         var _y = this.targets[1] * 50 + 20;
 
         draw.swap(x, y1);
-        draw.wire(x, y1, _y);
+        draw.wire(x + 5, y1 + 5, _y + 5);
         draw.swap(x, _y);
       } else {
         draw.gate(x, y1, this.targets.length, this.type.name.toUpperCase());
       }
+
+      draw.bar(x + 30, y1 - 3, p);
     }
   }]);
 
@@ -1363,33 +1396,36 @@ module.exports = /*#__PURE__*/function () {
 
 var FILE_VERSION = 1;
 
+var Gate = require("./gate");
+
 var Application = require("./application");
 
 var examples = require("./examples");
 
 var data = [];
+var main = module.exports;
 
 var displayAmplitudes = function displayAmplitudes(nqubits, amplitudes) {
   var hideBtn = document.querySelector("#hide-impossible");
-  var hide = hideBtn.innerHTML !== "(hide impossible)";
+  var hide = hideBtn.innerHTML !== "Hide Impossible States";
   var table = document.querySelector("#state-table");
   table.innerHTML = "";
   data = [];
 
-  for (var _i = 0; _i < amplitudes.x.length; _i++) {
+  for (var i = 0; i < amplitudes.x.length; i++) {
     var amplitude = "";
     var state = "";
 
     for (var j = 0; j < nqubits; j++) {
-      state = ((_i & 1 << j) >> j) + state;
+      state = ((i & 1 << j) >> j) + state;
     }
 
-    amplitude += amplitudes.x[_i].toFixed(8);
-    amplitude += amplitudes.y[_i] < 0 ? "-" : "+";
-    amplitude += Math.abs(amplitudes.y[_i]).toFixed(8) + "i";
+    amplitude += amplitudes.x[i].toFixed(8);
+    amplitude += amplitudes.y[i] < 0 ? "-" : "+";
+    amplitude += Math.abs(amplitudes.y[i]).toFixed(8) + "i";
     var row = document.createElement("tr");
-    var prob = Math.pow(amplitudes.x[_i], 2);
-    prob += Math.pow(amplitudes.y[_i], 2);
+    var prob = Math.pow(amplitudes.x[i], 2);
+    prob += Math.pow(amplitudes.y[i], 2);
 
     if (prob < numeric.epsilon) {
       if (hide) {
@@ -1471,8 +1507,9 @@ window.onload = function () {
   var app = new Application(canvas, 2);
   var editor = app.editor;
   var nqubitsUl = document.querySelector("#nqubits");
+  var qubit_number = document.querySelector("#qubit-number");
 
-  var _loop = function _loop(_i2) {
+  var _loop = function _loop(i) {
     var a = document.createElement("a");
     a.href = "#";
     a.innerHTML = '<img src="/static/images/delete.svg" />';
@@ -1480,25 +1517,30 @@ window.onload = function () {
     a.onclick = function (evt) {
       evt.preventDefault();
 
-      if (resize(_i2)) {
+      if (resize(i)) {
         nqubitsUl.removeChild(nqubitsUl.lastChild);
+        qubit_number.removeChild(qubit_number.lastChild);
       }
     };
 
     a.className = "delete-icon container";
     nqubitsUl.appendChild(a);
+    var div = document.createElement("div");
+    div.innerHTML = "<p>qubit " + i + "</p>";
+    div.className = "qubit-tag container";
+    qubit_number.appendChild(div);
   };
 
-  for (var _i2 = 1; _i2 < 3; _i2++) {
-    _loop(_i2);
+  for (var i = 1; i < 3; i++) {
+    _loop(i);
   }
 
   var hideBtn = document.querySelector("#hide-impossible");
 
   hideBtn.onclick = function (evt) {
     evt.preventDefault();
-    var hide = "(hide impossible)";
-    var show = "(show all)";
+    var hide = "Hide Impossible States";
+    var show = "Show All States";
     hideBtn.innerHTML = hideBtn.innerHTML == hide ? show : hide;
     document.querySelector("#evaluate").click();
   };
@@ -1515,8 +1557,10 @@ window.onload = function () {
 
   document.querySelector("#add-qubit").onclick = function (evt) {
     evt.preventDefault();
+    var last_qubit = app.circuit.nqubits + 1;
     editor.resize(app.circuit.nqubits + 1, editor.length);
     var nqubitsUl = document.querySelector("#nqubits");
+    var qubit_number = document.querySelector("#qubit-number");
     var a = document.createElement("a");
     a.href = "#";
     a.innerHTML = '<img src="/static/images/delete.svg" />';
@@ -1524,13 +1568,27 @@ window.onload = function () {
     a.onclick = function (evt) {
       evt.preventDefault();
 
-      if (resize(i)) {
+      if (resize(last_qubit)) {
         nqubitsUl.removeChild(nqubitsUl.lastChild);
+        qubit_number.removeChild(qubit_number.lastChild);
       }
     };
 
     a.className = "delete-icon container";
     nqubitsUl.appendChild(a);
+    var div = document.createElement("div");
+    div.innerHTML = "<p>qubit " + app.circuit.nqubits + "</p>";
+    div.className = "qubit-tag container";
+    qubit_number.appendChild(div);
+  };
+
+  document.querySelector("#myRange").onchange = function (evt) {
+    evt.preventDefault();
+    var slider = document.getElementById("myRange");
+    var cur_time = Math.ceil(slider.value / 3);
+    document.querySelector("#time").innerHTML = "time " + cur_time;
+    document.querySelector("#state-header").innerHTML = "State Probabilities at Time " + cur_time;
+    document.querySelector("#evaluate").click();
   };
 
   document.querySelector("#evaluate").onclick = function (evt) {
@@ -1543,7 +1601,6 @@ window.onload = function () {
     var amplitudes = new numeric.T(numeric.rep([size], 0), numeric.rep([size], 0));
     var state = editor.input.join("");
     amplitudes.x[parseInt(state, 2)] = 1;
-    console.log(app.circuit);
     app.applyCircuit(app.circuit.copy_until_time(slider.value), amplitudes, function (amplitudes) {
       displayAmplitudes(app.circuit.nqubits, amplitudes.div(amplitudes.norm2()));
     });
@@ -1573,21 +1630,21 @@ window.onload = function () {
       }
     });
     newGates.map(function (gate) {
-      for (var _i3 = 0; _i3 < gate.controls.length; _i3++) {
-        if (gate.controls[_i3] > qubit_number) {
-          --gate.controls[_i3];
+      for (var _i = 0; _i < gate.controls.length; _i++) {
+        if (gate.controls[_i] > qubit_number) {
+          --gate.controls[_i];
         }
       }
 
-      for (var _i4 = 0; _i4 < gate.range.length; _i4++) {
-        if (gate.range[_i4] > qubit_number) {
-          --gate.range[_i4];
+      for (var _i2 = 0; _i2 < gate.range.length; _i2++) {
+        if (gate.range[_i2] > qubit_number) {
+          --gate.range[_i2];
         }
       }
 
-      for (var _i5 = 0; _i5 < gate.targets.length; _i5++) {
-        if (gate.targets[_i5] > qubit_number) {
-          --gate.targets[_i5];
+      for (var _i3 = 0; _i3 < gate.targets.length; _i3++) {
+        if (gate.targets[_i3] > qubit_number) {
+          --gate.targets[_i3];
         }
       }
     });
@@ -1609,10 +1666,64 @@ window.onload = function () {
     evt.stopPropagation();
   };
 
+  document.querySelector("#canvas").onmouseleave = function (evt) {
+    evt.preventDefault();
+    document.querySelector("#evaluate").click();
+    console.log("leave");
+  };
+
   document.getElementById("evaluate").click();
+
+  main.calculate_gate_prob = function (input_gate) {
+    var new_circuit = app.circuit.copy();
+    var new_gates = new_circuit.gates.filter(function (gate) {
+      var all_qubits = gate.controls.concat(gate.range, gate.targets);
+
+      if (all_qubits.indexOf(input_gate.targets[0]) >= 0) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+    var mapped_gates = [];
+
+    for (var _i4 = 0; _i4 < new_gates.length; _i4++) {
+      var new_targets = [];
+      var num_targets = new_gates[_i4].targets.length;
+
+      for (var _i5 = 0; _i5 < num_targets; _i5++) {
+        new_targets.push(0);
+      }
+
+      var new_controls = [];
+      var num_controls = new_gates[_i4].controls.length;
+
+      for (var _i6 = 0; _i6 < num_controls; _i6++) {
+        new_controls.push(0);
+      }
+
+      mapped_gates.push(new Gate(new_gates[_i4].type, new_gates[_i4].time, new_targets, new_controls));
+    }
+
+    new_circuit.gates = mapped_gates;
+    new_circuit.nqubits = 1;
+    new_circuit.gates.sort(function (a, b) {
+      return a.time - b.time;
+    });
+    var size = Math.pow(2, new_circuit.nqubits);
+    var amplitudes = new numeric.T(numeric.rep([size], 0), numeric.rep([size], 0));
+    var state = new_circuit.app.editor.input.join("");
+    amplitudes.x[parseInt(state, 2)] = 1;
+    app.applyCircuit(new_circuit.copy_until_time(input_gate.time), amplitudes, function (amplitudes) {
+      amplitudes = amplitudes.div(amplitudes.norm2());
+      var prob = Math.pow(amplitudes.x[0], 2);
+      prob += Math.pow(amplitudes.y[0], 2);
+      input_gate.probability = prob * 100;
+    });
+  };
 };
 
-},{"./application":1,"./examples":5}],8:[function(require,module,exports){
+},{"./application":1,"./examples":5,"./gate":6}],8:[function(require,module,exports){
 "use strict";
 
 var quantum = module.exports;

@@ -37,14 +37,30 @@ module.exports = class Draw {
         this.gfx.stroke(0);
     }
 
+    bar(x, y, p) {
+        const width1 = p;
+        const width2 = 100 - p;
+        this.gfx.fill(56, 111, 164);
+        this.gfx.rect(x, y, width1, 15);
+        this.gfx.fill(132, 210, 246);
+        this.gfx.rect(x + width1, y, width2, 15);
+    }
+
+    empty_gate(x, y) {
+        this.gfx.stroke(19, 60, 85);
+        this.gfx.strokeWeight(2);
+        this.gfx.fill(225, 236, 239);
+        this.gfx.rect(x + 2, y + 2, 46, 46, 5);
+    }
+
     qubit(x, y, h, state) {
         this.gfx.textSize(17);
         this.gfx.noStroke();
-        this.gfx.fill(255);
-        this.gfx.rect(x - 20, y - 17, 50, h * 50 - 6);
+        this.gfx.fill(246, 252, 255);
+        this.gfx.rect(x - 20, y - 10, 50, h * 50 - 6);
         this.gfx.fill(0);
         this.gfx.text(state ? "|1>" : "|0>", x, y + (h / 2) * 50 - 15);
-        this.gfx.fill(255);
+        this.gfx.fill(246, 252, 255);
         this.gfx.stroke();
         this.gfx.textSize(11);
     }
@@ -71,6 +87,7 @@ module.exports = class Draw {
         this.gfx.stroke(246, 252, 255);
         this.gfx.line(x - 6, y + 5, x + 14, y + 5);
         this.gfx.line(x + 5, y - 6, x + 5, y + 14);
+        this.gfx.stroke(19, 60, 85);
     }
 
     wire(x, y1, y2) {
